@@ -1,0 +1,78 @@
+apply plugin: 'maven-publish'
+apply plugin: 'signing'
+
+task sourcesJar(type: Jar, dependsOn: classes) {
+    archiveClassifier.set('sources')
+    from sourceSets.main.allSource
+}
+
+task javadocJar(type: Jar, dependsOn: javadoc) {
+    archiveClassifier.set('javadoc')
+    from javadoc.destinationDir
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+
+            artifact tasks.sourcesJar
+            artifact tasks.javadocJar
+
+            pom {
+                name = 'Zebrunner TestNG agent'
+                url = 'https://github.com/zebrunner/java-agent-testng'
+                organization {
+                    name = 'Zebrunner'
+                    url = 'https://zebrunner.com'
+                }
+                licenses {
+                    license {
+                        name = 'The Apache License, Version 2.0'
+                        url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                    }
+                }
+                developers {
+                    developer {
+                        id = 'nsidorevich'
+                        name = 'Nikita Sidorevich'
+                        email = 'nsidorevich@zebrunner.com'
+                    }
+                    developer {
+                        id = 'brutskov'
+                        name = 'Bogdan Rutskov'
+                        email = 'brutskov@zebrunner.com'
+                    }
+                }
+                scm {
+                    connection = 'https://github.com/zebrunner/java-agent-testng.git'
+                    developerConnection = 'git@github.com:zebrunner/java-agent-testng.git'
+                    url = 'https://github.com/zebrunner/java-agent-testng'
+                }
+                issueManagement {
+                    system = 'GitHub'
+                    url = 'https://github.com/zebrunner/java-agent-testng/issues'
+                }
+            }
+        }
+    }
+    repositories {
+        maven {
+            name = 'MavenCentral'
+            def releasesRepoUrl = 'https://oss.sonatype.org/service/local/staging/deploy/maven2'
+            def snapshotsRepoUrl = 'https://oss.sonatype.org/content/repositories/snapshots'
+            url = version.endsWith('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
+            credentials {
+                username = project.findProperty('publishing.maven.username') ?: System.getenv('PUBLISHING_MAVEN_USER')
+                password = project.findProperty('publishing.maven.password') ?: System.getenv('PUBLISHING_MAVEN_PASSWORD')
+            }
+        }
+    }
+}
+
+signing {
+    def signingKey = project.findProperty('signing.key') ?: System.getenv('SIGNING_KEY')
+    def signingPassword = project.findProperty('signing.password') ?: System.getenv('SIGNING_PASSWORD')
+    useInMemoryPgpKeys(signingKey, signingPassword)
+    sign publishing.publications.mavenJava
+}
