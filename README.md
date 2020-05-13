@@ -12,6 +12,8 @@ To check out the project and build from source, do the following:
 
 # Including into your project
 
+Agent comes bundled with TestNG 7.1.0, so you may want to comment our your dependency or exclude it from agent.
+
 Gradle:
 ```gradle
 dependencies {
@@ -28,29 +30,101 @@ Maven:
 </dependency>
 ```
 
-# Agent configuration - reporting
+# Agent configuration
 
-In order to start using agent for reporting you'll nead to provide minimal configuration such as Zebrunner API host and API access token. Configuration lookup is implenented in the following mannger: first agent seeks for environment variables required, then it looks for system arguments (arguments passed to java programm) and finally looks for property file residing in root of resources folder called `agent.properties` and uses whatever found first.
-1. Environment configuration - `ZBR_HOSTNAME` and `ZBR_ACCESS_TOKEN` env variables should be initialized
-2. System configuration - `zbr.hostname` and `zbr.accessToken` params should be passed
-3. Property file - file called `agent.properties` should reside in resources root folder and contain `zbr.hostname` and `zbr.access-token` properties with corresponding values.
+Once agent is available on classpath of your test project it is automatically enabled and expects valid configuration to be available.
+It is currently possible to provide configuration via: 
 
-# Agent configuration - smart reruns
+1. Environment variables 
+2. Program arguments 
+3. YAML file
+4. Properties file
 
-In order to use smart reruns for your test runs additional property should be specified in `agent.properties` called `rerun_id`. This property basically encodes a rerun conditions - test run id and selectors describing what tests to rerun (e.g. by specifying test ids or statuses). Below are examples of such conditions:
+Configuration lookup will be performed in order listed above, meaning that environment configuration will always take precedence over YAML and so on.
+It is also possible to override configuration parameters by supplying them via configuration provider having higher precedence.
+
+Once configuration is in place agent is ready to track you test run events, no additional configuration required.
+
+## Environment configuration
+
+The following configuration parameters are recognized by agent:
+
+- `REPORTING_ENABLED` - optional, default value: `true`. Enables or disables reporting. Once disabled - agent will use no op component implementations that will simply log output for tracing purpose
+- `REPORTING_SERVER_HOSTNAME` - mandatory. Zebrunner server hostname
+- `REPORTING_SERVER_ACCESS_TOKEN` - mandatory. Access token to be used to perform API calls. Can be obtained by visiting Zebrunner user profile page
+
+## Program arguments configuration
+
+The following configuration parameters are recognized by agent:
+
+- `reporting.enabled` - optional, default value: `true`. Enables or disables reporting. Once disabled - agent will use no op component implementations that will simply log output for tracing purpose
+- `reporting.server.hostname` - mandatory. Zebrunner server hostname
+- `reporting.server.accessToken` - mandatory. Access token to be used to perform API calls. Can be obtained by visiting Zebrunner user profile page
+
+## YAML configuration
+
+Agent will recognize `agent.yaml` or `agent.yml` file residing in resources root folder. It is currently not possible to configure alternative file location.
+Below is sample configuration file:
+
+```yaml
+reporting:
+  enabled: true
+  server:
+    hostname: localhost:8080/api
+    access-token: <token>
+
 ```
-# general condition structure
-<test-run-id>:<optional:test-selectors>
 
-# condition that will tell agent to rerun all tests
-677d3bb5-52b5-414b-8790-b538815572f0
+- `reporting.enabled` - optional, default value: `true`. Enables or disables reporting. Once disabled - agent will use no op component implementations that will simply log output for tracing purpose
+- `reporting.server.hostname` - mandatory. Zebrunner server hostname
+- `reporting.server.access-token` - mandatory. Access token to be used to perform API calls. Can be obtained by visiting Zebrunner user profile page
 
-# condition that will tell agent to rerun tests with specified ids only
-677d3bb5-52b5-414b-8790-b538815572f0:[1, 2, 3, 4]
+## Properties configuration
 
-# condition that will tell agent to rerun tests having either passed or failed status
-677d3bb5-52b5-414b-8790-b538815572f0:[passed, failed]
+Agent will recognize `agent.properties` file residing in resources root folder. It is currently not possible to configure alternative file location.
+Below is sample configuration file:
+
+```properties
+zafira_enabled=true
+zbr.hostname=localhost:8080/api
+zbr.access-token=<token>
 ```
+
+- `reporting.enabled` - optional, default value: `true`. Enables or disables reporting. Once disabled - agent will use no op component implementations that will simply log output for tracing purpose
+- `reporting.server.hostname` - mandatory. Zebrunner server hostname
+- `reporting.server.access-token` - mandatory. Access token to be used to perform API calls. Can be obtained by visiting Zebrunner user profile page
+
+# Advanced reporting
+
+It is possible to configure additional reporting capabilities improving your tracking experience. 
+
+## Collecting test logs
+
+It is also possible to enable log collection for your tests. Currently three logging frameworks are supported out of the box: logback, log4j, log4j2.
+In order to enable logging all you have to do is register reporting appender in your test framework configuration file.
+Below is the list of appenders supplied out of the box:
+
+1. logback: `com.zebrunner.agent.core.appender.logback.ReportingAppender`
+2. log4j: `com.zebrunner.agent.core.appender.log4j.ReportingAppender`
+3. log4j2: `com.zebrunner.agent.core.appender.log4j2.ReportingAppender`
+
+## Capturing screenshots
+
+In case you are using TestNG as a UI testing framework it might come handy to have an ability to track captured screenshots in scope of Zebrunner reporting.
+Agent comes with a Java API allowing you to send your screenshots to Zebrunner so they will be attached to test run. 
+Below is a sample code of test sending screenshot to Zebrunner:
+
+```java
+@Test
+public void myAwesomeTest() {
+    // capture screenshot 
+    Screenshot.upload(screenshotBytes, capturedAtMillis);
+    // meaningful assertions
+}
+```
+
+Screenshot should be passed as byte array along with unix timestamp in milliseconds corresponding to the moment when screenshot was captured. 
+If `null` is supplied instead of timestamp - it will be generated automatically, however it is strongly recommended to include accurate timestamp in order to get accurate tracking. 
 
 # License
 
