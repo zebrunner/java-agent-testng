@@ -10,7 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Stores context of specific test method invocation (e.g. invocation N of test method with invocation count X where N <= X)
+ * Stores context of specific test method invocation (e.g. invocation N of test method with invocation count X where N is less or equal than X)
  */
 @Getter
 @Setter
