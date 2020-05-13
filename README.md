@@ -115,11 +115,17 @@ Agent comes with a Java API allowing you to send your screenshots to Zebrunner s
 Below is a sample code of test sending screenshot to Zebrunner:
 
 ```java
-@Test
-public void myAwesomeTest() {
-    // capture screenshot 
-    Screenshot.upload(screenshotBytes, capturedAtMillis);
-    // meaningful assertions
+import com.zebrunner.agent.core.registrar.Screenshot;
+
+public class AwesomeTests {
+
+    @Test
+    public void myAwesomeTest() {
+        // capture screenshot 
+        Screenshot.upload(screenshotBytes, capturedAtMillis);
+        // meaningful assertions
+    }
+
 }
 ```
 
