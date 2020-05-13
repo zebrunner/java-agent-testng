@@ -6,7 +6,6 @@ group = 'com.zebrunner'
 version = "${version != 'unspecified' ? version : '1.0-SNAPSHOT'}"
 
 repositories {
-    jcenter()
     mavenCentral()
     maven {
         url "https://oss.sonatype.org/content/repositories/snapshots/"
@@ -15,7 +14,7 @@ repositories {
 
 dependencies {
     implementation("com.zebrunner:agent-core:1.0-SNAPSHOT")
-    implementation("org.testng:testng:7.1.1") //todo compileOnly?
+    implementation("org.testng:testng:7.1.0") //todo compileOnly?
     implementation("com.google.code.gson:gson:2.8.6")
 
     annotationProcessor("org.projectlombok:lombok:1.18.10")
