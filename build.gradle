@@ -7,14 +7,14 @@ version = "${version != 'unspecified' ? version : '1.0-SNAPSHOT'}"
 
 repositories {
     mavenCentral()
-    maven {
-        url "https://oss.sonatype.org/content/repositories/snapshots/"
-    }
+//    maven {
+//        url "https://oss.sonatype.org/content/repositories/snapshots/"
+//    }
 }
 
 dependencies {
-    implementation("com.zebrunner:agent-core:1.0-SNAPSHOT")
-    implementation("org.testng:testng:7.1.0") //todo compileOnly?
+    implementation("com.zebrunner:agent-core:1.0.0")
+    implementation("org.testng:testng:7.1.0")
     implementation("com.google.code.gson:gson:2.8.6")
 
     annotationProcessor("org.projectlombok:lombok:1.18.10")
