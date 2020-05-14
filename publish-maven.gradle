@@ -21,6 +21,7 @@ publishing {
 
             pom {
                 name = 'Zebrunner TestNG agent'
+                description = 'Zebrunner TestNG agent library'
                 url = 'https://github.com/zebrunner/java-agent-testng'
                 organization {
                     name = 'Zebrunner'
