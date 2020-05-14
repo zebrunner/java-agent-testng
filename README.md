@@ -116,6 +116,7 @@ Below is a sample code of test sending screenshot to Zebrunner:
 
 ```java
 import com.zebrunner.agent.core.registrar.Screenshot;
+import org.testng.annotations.Test;
 
 public class AwesomeTests {
 
@@ -131,6 +132,38 @@ public class AwesomeTests {
 
 Screenshot should be passed as byte array along with unix timestamp in milliseconds corresponding to the moment when screenshot was captured. 
 If `null` is supplied instead of timestamp - it will be generated automatically, however it is strongly recommended to include accurate timestamp in order to get accurate tracking. 
+
+## Tracking test maintainer
+
+You might want to add transparency to the process of automation maintenance by having an engineer responsible for evolution of specific tests or test classes.
+Zebrunner comes with a concept of maintainer - a person that can be assigned to maintain tests. In order to keep track of those agent comes with `@Maintainer` annotation.
+Test classes and methods can be annotated. It is also possible to override class-level maintainer on a mehtod-level.
+See a sample test class below:
+
+```java
+import com.zebrunner.agent.core.reporting.Maintainer;
+import org.testng.annotations.Test;
+
+@Maintainer("kenobi")
+public class AwesomeTests {
+
+    @Test
+    @Maintainer("skywalker")
+    public void awesomeTest() {
+        // meaningful assertions
+    }
+
+    @Test
+    public void anotherAwesomeTest() {
+        // meaningful assertions
+    }
+
+
+}
+```
+
+In the example above `kenobi` will be reported as a maintaner of `anotherAwesomeTest` (class-level value taken into account), while `skywalker` will be reported as a mainainer of test `awesomeTest`.
+Maintainer username should be valid Zebrunner username, otherwise it will be set to `anonymous`.
 
 # License
 
