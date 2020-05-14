@@ -85,9 +85,9 @@ Agent will recognize `agent.properties` file residing in resources root folder. 
 Below is sample configuration file:
 
 ```properties
-zafira_enabled=true
-zbr.hostname=localhost:8080/api
-zbr.access-token=<token>
+reporting.enabled=true
+reporting.server.hostname=localhost:8080
+reporting.server.access-token=<token>
 ```
 
 - `reporting.enabled` - optional, default value: `true`. Enables or disables reporting. Once disabled - agent will use no op component implementations that will simply log output for tracing purpose
