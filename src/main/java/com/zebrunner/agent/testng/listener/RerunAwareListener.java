@@ -1,7 +1,7 @@
 package com.zebrunner.agent.testng.listener;
 
+import com.zebrunner.agent.core.listener.RerunListener;
 import com.zebrunner.agent.core.registrar.RerunContextHolder;
-import com.zebrunner.agent.core.rerun.RerunListener;
 import com.zebrunner.agent.core.rest.domain.TestDTO;
 import com.zebrunner.agent.testng.core.FactoryInstanceHolder;
 import com.zebrunner.agent.testng.core.TestInvocationContext;
