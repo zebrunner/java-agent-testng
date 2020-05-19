@@ -13,7 +13,7 @@ repositories {
 }
 
 dependencies {
-    implementation("com.zebrunner:agent-core:1.0.1.41-SNAPSHOT")
+    implementation("com.zebrunner:agent-core:1.0.1.42-SNAPSHOT")
     implementation("org.testng:testng:7.1.0")
     implementation("com.google.code.gson:gson:2.8.6")
 
