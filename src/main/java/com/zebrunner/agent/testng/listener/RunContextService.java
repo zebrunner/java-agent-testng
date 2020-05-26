@@ -38,6 +38,16 @@ public class RunContextService {
         return testMethodContext.getCurrentInvocationCount();
     }
 
+    public static void setHeadlessWasExecuted(ITestNGMethod method, ITestContext context) {
+        TestMethodContext testMethodContext = getOrInitRerunContext(method, context);
+        testMethodContext.setHeadlessWasExecuted(true);
+    }
+
+    public static boolean isHeadlessWasExecuted(ITestNGMethod method, ITestContext context) {
+        TestMethodContext testMethodContext = getOrInitRerunContext(method, context);
+        return testMethodContext.isHeadlessWasExecuted();
+    }
+
     public static void setOriginalDataProviderIndex(Integer index, ITestNGMethod method, ITestContext context) {
         TestMethodContext testMethodContext = getOrInitRerunContext(method, context);
 
@@ -53,6 +63,28 @@ public class RunContextService {
         Optional<TestMethodContext> maybeRerunContext = getRerunContext(method, context);
         Optional<Set<Integer>> maybeIndices = maybeRerunContext.map(TestMethodContext::getOriginalDataProviderIndices);
         return maybeIndices.orElse(Collections.emptySet());
+    }
+
+    public static void setDataProviderSize(ITestNGMethod method, ITestContext context, int size) {
+        TestMethodContext testMethodContext = getOrInitRerunContext(method, context);
+        testMethodContext.setDataProviderSize(size);
+    }
+
+    public static int getDataProviderSize(ITestNGMethod method, ITestContext context) {
+        Optional<TestMethodContext> maybeRerunContext = getRerunContext(method, context);
+        Optional<Integer> maybeDataProviderSize = maybeRerunContext.map(TestMethodContext::getDataProviderSize);
+        return maybeDataProviderSize.orElse(0);
+    }
+
+    public static void setDataProviderCurrentIndex(ITestNGMethod method, ITestContext context, int index) {
+        TestMethodContext testMethodContext = getOrInitRerunContext(method, context);
+        testMethodContext.setDataProviderCurrentIndex(index);
+    }
+
+    public static int getDataProviderCurrentIndex(ITestNGMethod method, ITestContext context) {
+        Optional<TestMethodContext> maybeRerunContext = getRerunContext(method, context);
+        Optional<Integer> maybeDataProviderCurrentIndex = maybeRerunContext.map(TestMethodContext::getDataProviderCurrentIndex);
+        return maybeDataProviderCurrentIndex.orElse(-1);
     }
 
     public static void setForceRerun(ITestNGMethod method, ITestContext context) {

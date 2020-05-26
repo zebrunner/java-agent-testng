@@ -1,6 +1,7 @@
 package com.zebrunner.agent.testng.listener;
 
 import com.zebrunner.agent.testng.adapter.TestNGAdapter;
+import org.testng.IConfigurationListener;
 import org.testng.ISuite;
 import org.testng.ISuiteListener;
 import org.testng.ITestContext;
@@ -11,7 +12,7 @@ import org.testng.ITestResult;
 /**
  * Zebrunner Agent Listener implementation tracking TestNG test run events
  */
-public class TestRunListener extends RerunAwareListener implements ISuiteListener, ITestListener, ITestNGListener {
+public class TestRunListener extends RerunAwareListener implements ISuiteListener, ITestListener, ITestNGListener, IConfigurationListener {
 
     private final TestNGAdapter adapter;
 
@@ -64,4 +65,8 @@ public class TestRunListener extends RerunAwareListener implements ISuiteListene
         System.out.println();
     }
 
+    @Override
+    public void beforeConfiguration(ITestResult tr) {
+        adapter.registerHeadlessTestStart(tr);
+    }
 }

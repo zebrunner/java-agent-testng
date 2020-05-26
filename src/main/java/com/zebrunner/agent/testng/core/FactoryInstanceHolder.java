@@ -42,9 +42,9 @@ public class FactoryInstanceHolder {
      * @return factory instance index. If test method does not belong to factory instance -1 will be returned
      */
     public static int getInstanceIndex(ITestNGMethod method) {
-        List<Long> hashCodes = instancesHashCodes.get(method.getTestClass().getName());
         IParameterInfo factoryParamsInfo = method.getFactoryMethodParamsInfo();
         if (factoryParamsInfo != null) {
+            List<Long> hashCodes = instancesHashCodes.get(method.getTestClass().getName());
             return hashCodes.indexOf((long) factoryParamsInfo.getInstance().hashCode());
         }
         return -1;

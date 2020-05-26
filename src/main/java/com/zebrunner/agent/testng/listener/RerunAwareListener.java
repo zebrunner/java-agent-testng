@@ -1,5 +1,6 @@
 package com.zebrunner.agent.testng.listener;
 
+import com.google.common.collect.Lists;
 import com.zebrunner.agent.core.listener.RerunListener;
 import com.zebrunner.agent.core.registrar.RerunContextHolder;
 import com.zebrunner.agent.core.rest.domain.TestDTO;
@@ -43,15 +44,20 @@ public class RerunAwareListener implements RerunListener, IDataProviderIntercept
 
     @Override
     public Iterator<Object[]> intercept(Iterator<Object[]> original, IDataProviderMethod dataProviderMethod, ITestNGMethod method, ITestContext context) {
+        Iterator<Object[]> result;
         if (RerunContextHolder.isRerun()) {
             Set<Integer> indices = RunContextService.getDataProviderIndicesForRerun(method, context);
             boolean forced = RunContextService.isForceRerun(method, context);
             boolean filterIndices = !indices.isEmpty() && !forced;
 
-            return filterIndices ? filterDataProviderIndices(original, indices) : original;
+            result = filterIndices ? filterDataProviderIndices(original, indices) : original;
         } else {
-            return original;
+            result = original;
         }
+        List<Object[]> resultAsList = Lists.newArrayList(result);
+        RunContextService.setDataProviderSize(method, context, resultAsList.size());
+
+        return new TrackableIterator(resultAsList.iterator(), method, context);
     }
 
     private Iterator<Object[]> filterDataProviderIndices(Iterator<Object[]> original, Set<Integer> rerunIndices) {
@@ -74,6 +80,36 @@ public class RerunAwareListener implements RerunListener, IDataProviderIntercept
                 return result;
             }
         };
+    }
+
+    private class TrackableIterator implements Iterator<Object[]> {
+
+        private final Iterator<Object[]> originalIterator;
+        private final ITestNGMethod method;
+        private final ITestContext context;
+        private Integer parameterIndex;
+
+        public TrackableIterator(Iterator<Object[]> originalIterator, ITestNGMethod method, ITestContext context) {
+            this.originalIterator = originalIterator;
+            this.method = method;
+            this.context = context;
+        }
+
+        @Override
+        public boolean hasNext() {
+            return originalIterator.hasNext();
+        }
+
+        @Override
+        public Object[] next() {
+            if (parameterIndex == null) {
+                parameterIndex = 0;
+            } else {
+                parameterIndex ++;
+            }
+            RunContextService.setDataProviderCurrentIndex(method, context, parameterIndex);
+            return originalIterator.next();
+        }
     }
 
     /**

@@ -20,6 +20,11 @@ public class TestMethodContext {
     private AtomicInteger currentInvocationCount = new AtomicInteger(0);
 
     /**
+     * Indicates that headless method was executed
+     */
+    private boolean headlessWasExecuted;
+
+    /**
      * Index of list element - current index
      * Item value - old index
      */
@@ -35,6 +40,16 @@ public class TestMethodContext {
      * Value is a retry context
      */
     private RetryContext retryContext;
+
+    /**
+     * Represents size of data provider
+     */
+    private int dataProviderSize;
+
+    /**
+     * Represents current index of data provider
+     */
+    private int dataProviderCurrentIndex;
 
     public void incrementInvocationCount() {
         currentInvocationCount.incrementAndGet();

@@ -14,10 +14,13 @@ import org.testng.ISuite;
 import org.testng.ITestContext;
 import org.testng.ITestNGMethod;
 import org.testng.ITestResult;
-import org.testng.internal.ConstructorOrMethod;
-import org.testng.internal.TestNGMethod;
+import org.testng.annotations.Test;
+import org.testng.internal.ConfigurationMethod;
+import org.testng.internal.TestResult;
+import org.testng.internal.thread.ThreadUtil;
 import org.testng.xml.XmlSuite;
 
+import java.lang.reflect.Method;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
@@ -67,26 +70,131 @@ public class TestNGAdapter {
 
             RunContextService.incrementMethodInvocationCount(testResult.getMethod(), testResult.getTestContext());
 
-            long startedAtMillis = testResult.getStartMillis();
-            OffsetDateTime startedAt = ofMillis(startedAtMillis);
-
-            ITestNGMethod testMethod = testResult.getMethod();
-            ConstructorOrMethod testConstructorOrMethod = testMethod.getConstructorOrMethod();
-
-            TestInvocationContext testContext = buildUuid(testResult);
-            if (RerunContextHolder.isRerun()) {
-                testContext = recognizeTestContextOnRerun(testContext, testMethod, testResult.getTestContext());
-            }
-
-            String uuid = testContext.asJsonString();
-            String displayName = testContext.buildUniqueDisplayName();
-            String maintainer = rootXmlSuite.getParameter("maintainer");
-
-            TestStartDescriptor testStartDescriptor = new TestStartDescriptor(uuid, displayName, startedAt, maintainer, testResult.getTestClass().getRealClass(), testConstructorOrMethod.getMethod());
+            TestInvocationContext testContext = buildTestInvocationContext(testResult);
+            TestStartDescriptor testStartDescriptor = buildTestStartDescriptor(testResult, testContext);
 
             String id = generateTestId(testContext);
             registrar.startTest(id, testStartDescriptor);
         }
+    }
+
+    public void registerHeadlessTestStart(ITestResult testResult) {
+        ITestNGMethod resultMethod = testResult.getMethod();
+        if (resultMethod instanceof ConfigurationMethod) {
+            ConfigurationMethod method = (ConfigurationMethod) resultMethod;
+
+            boolean register = method.isBeforeMethodConfiguration();
+            if (register) {
+                ITestNGMethod testToExecute = getNextInvokedTest(testResult);
+                if (testToExecute != null) {
+                    RunContextService.setHeadlessWasExecuted(testToExecute, testResult.getTestContext());
+
+                    TestInvocationContext testContext = buildHeadlessTestInvocationContext(testToExecute, testResult.getTestContext());
+                    TestStartDescriptor testStartDescriptor = buildHeadlessTestStartDescriptor(testResult, testContext);
+
+                    String id = generateTestId(testContext);
+                    registrar.startHeadlessTest(id, testStartDescriptor);
+                }
+            }
+        }
+    }
+
+    /**
+     * Finds next method to execute according configuration methods
+     * @param tr to check
+     * @return next method to execute or null if operation does not supported
+     */
+    private ITestNGMethod getNextInvokedTest(ITestResult tr) {
+        ITestNGMethod result = null;
+        if (tr.getMethod() instanceof ConfigurationMethod) {
+            ConfigurationMethod configurationMethod = (ConfigurationMethod) tr.getMethod();
+            if (configurationMethod.isBeforeMethodConfiguration()) {
+                ITestNGMethod[] methods = tr.getTestContext().getAllTestMethods();
+                List<ITestNGMethod> candidates = Arrays.stream(methods)
+                                                       .filter(this::fromCurrentThread)
+                                                       .filter(method -> isPreparedToRun(method, tr.getTestContext()))
+                                                       .collect(Collectors.toList());
+
+                if (candidates.size() == 1) {
+                    result = candidates.get(0);
+                }
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Indicated that method was prepared and will be executed next
+     * @param method to check
+     * @param context to check
+     * @return true if method will be executed next
+     */
+    private boolean isPreparedToRun(ITestNGMethod method, ITestContext context) {
+        int currentInvocationCount = method.getCurrentInvocationCount();
+        boolean methodWasCompletedOrPreparedToStart = methodWasCompletedOrPreparedToStart(method);
+        boolean notCompleted = method.isDataDriven() ? currentInvocationCount < RunContextService.getDataProviderSize(method, context)
+                : currentInvocationCount == 0;
+        return methodWasCompletedOrPreparedToStart && notCompleted;
+    }
+
+    private boolean fromCurrentThread(ITestNGMethod method) {
+        return method.getId().equals(ThreadUtil.currentThreadInfo());
+    }
+
+    /**
+     * Indicates that method was completed or was prepared to run.
+     * Not prepared or not executed methods don't have id parameter
+     * @param method to check
+     * @return true if method was executed or prepared to run
+     */
+    private boolean methodWasCompletedOrPreparedToStart(ITestNGMethod method) {
+        return method.getId() != null && !method.getId().isBlank();
+    }
+
+    private TestStartDescriptor buildTestStartDescriptor(ITestResult testResult, TestInvocationContext testContext) {
+        String uuid = testContext.asJsonString();
+        String displayName = testContext.buildUniqueDisplayName();
+        return buildTestStartDescriptor(uuid, testResult, displayName);
+    }
+
+    private TestStartDescriptor buildHeadlessTestStartDescriptor(ITestResult testResult, TestInvocationContext testContext) {
+        String uuid = testContext.asJsonString();
+        testContext.setMethodName(testResult.getMethod().getMethodName());
+        String displayName = testContext.buildUniqueDisplayName();
+        return buildTestStartDescriptor(uuid, testResult, displayName);
+    }
+
+    private TestStartDescriptor buildTestStartDescriptor(String uuid, ITestResult testResult, String displayName) {
+        long startedAtMillis = testResult.getStartMillis();
+        OffsetDateTime startedAt = ofMillis(startedAtMillis);
+
+        Method method = testResult.getMethod().getConstructorOrMethod().getMethod();
+        Class<?> realClass = testResult.getTestClass().getRealClass();
+        String maintainer = rootXmlSuite.getParameter("maintainer");
+
+        return new TestStartDescriptor(uuid, displayName, startedAt, maintainer, realClass, method);
+    }
+
+    private TestInvocationContext buildTestInvocationContext(ITestResult testResult) {
+        TestInvocationContext testContext = buildUuid(testResult);
+        return buildTestInvocationContext(testContext, testResult.getMethod(), testResult.getTestContext());
+    }
+
+    private TestInvocationContext buildHeadlessTestInvocationContext(ITestNGMethod testMethod, ITestContext context) {
+        int dataProviderLineIndex = RunContextService.getDataProviderCurrentIndex(testMethod, context);
+        int invocationCount = RunContextService.getMethodInvocationCount(testMethod, context);
+        if (RunContextService.isHeadlessWasExecuted(testMethod, context)) {
+            invocationCount ++;
+        }
+        TestInvocationContext testContext = buildUuid(testMethod, dataProviderLineIndex, invocationCount);
+        return buildTestInvocationContext(testContext, testMethod, context);
+    }
+
+    private TestInvocationContext buildTestInvocationContext(TestInvocationContext testContext, ITestNGMethod testMethod, ITestContext context) {
+        if (RerunContextHolder.isRerun()) {
+            testContext = recognizeTestContextOnRerun(testContext, testMethod, context);
+        }
+        return testContext;
     }
 
     public void registerTestFinish(ITestResult testResult) {
@@ -160,35 +268,36 @@ public class TestNGAdapter {
     }
 
     private TestInvocationContext buildUuid(ITestResult testResult) {
-        TestNGMethod testMethod = (TestNGMethod) testResult.getMethod();
+        ITestNGMethod testMethod = testResult.getMethod();
+        int dataProviderLineIndex = ((TestResult) testResult).getParameterIndex();
+        int invocationCount = RunContextService.getMethodInvocationCount(testMethod, testResult.getTestContext());
+        return buildUuid(testMethod, dataProviderLineIndex, invocationCount);
+    }
 
-        String displayName;
+    private TestInvocationContext buildUuid(ITestNGMethod testMethod, int dataProviderLineIndex, int invocationCount) {
+        String displayName = null;
         List<String> parameterClassNames;
-        int dataProviderLineIndex = -1;
+        int lineIndex = testMethod.isDataDriven() ? dataProviderLineIndex : -1;
 
-        displayName = testMethod.getConstructorOrMethod()
-                                .getMethod()
-                                .getAnnotation(org.testng.annotations.Test.class)
-                                .testName();
+        Test testAnnotation = testMethod.getConstructorOrMethod()
+                              .getMethod()
+                              .getAnnotation(org.testng.annotations.Test.class);
+        if (testAnnotation != null) {
+            displayName = testAnnotation.testName();
+        }
 
         parameterClassNames = Arrays.stream(testMethod.getConstructorOrMethod().getParameterTypes())
                                     .map(Class::getName)
                                     .collect(Collectors.toList());
 
-        if (testMethod.isDataDriven()) {
-            dataProviderLineIndex = ((org.testng.internal.TestResult) testResult).getParameterIndex();
-        }
-
         int instanceIndex = FactoryInstanceHolder.getInstanceIndex(testMethod);
-
-        int invocationCount = RunContextService.getMethodInvocationCount(testMethod, testResult.getTestContext());
 
         return TestInvocationContext.builder()
                                     .className(testMethod.getTestClass().getName())
                                     .methodName(testMethod.getMethodName())
                                     .displayName(displayName)
                                     .parameterClassNames(parameterClassNames)
-                                    .dataProviderLineIndex(dataProviderLineIndex)
+                                    .dataProviderLineIndex(lineIndex)
                                     .instanceIndex(instanceIndex)
                                     .invocationIndex(invocationCount)
                                     .build();
