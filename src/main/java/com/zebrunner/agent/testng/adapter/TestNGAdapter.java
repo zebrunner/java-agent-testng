@@ -53,9 +53,8 @@ public class TestNGAdapter {
                 rootXmlSuite = parentXmlSuite != null ? parentXmlSuite : rootXmlSuite;
             }
             String name = rootXmlSuite.getName();
-            TestRunStartDescriptor testRunStartDescriptor = new TestRunStartDescriptor(name, "testng", OffsetDateTime.now(), name);
 
-            registrar.start(testRunStartDescriptor);
+            registrar.start(new TestRunStartDescriptor(name, "testng", OffsetDateTime.now(), name));
         }
     }
 
@@ -216,20 +215,21 @@ public class TestNGAdapter {
     public void registerFailedTestFinish(ITestResult testResult) {
         if (isRetryFinished(testResult.getMethod(), testResult.getTestContext())) {
 
+            TestInvocationContext testContext = buildUuid(testResult);
+            String id = generateTestId(testContext);
+
+            if (!registrar.isTestStarted(id)) {
+                registerTestStart(testResult);
+            }
+
             long endedAtMillis = testResult.getEndMillis();
             OffsetDateTime endedAt = ofMillis(endedAtMillis);
 
-            TestInvocationContext testContext = buildUuid(testResult);
-
-            String message;
-            if (wasRetry(testResult.getMethod(), testResult.getTestContext())) {
-                message = collectRetryMessages(testResult.getMethod(), testResult.getTestContext());
-            } else {
-                message = testResult.getThrowable().getMessage();
-            }
+            String message = wasRetry(testResult.getMethod(), testResult.getTestContext())
+                    ? collectRetryMessages(testResult.getMethod(), testResult.getTestContext())
+                    : testResult.getThrowable().getMessage();
 
             TestFinishDescriptor result = new TestFinishDescriptor(Status.FAILED, endedAt, message);
-            String id = generateTestId(testContext);
             registrar.finishTest(id, result);
         }
     }
@@ -255,16 +255,15 @@ public class TestNGAdapter {
         }
     }
 
-    private TestInvocationContext recognizeTestContextOnRerun(TestInvocationContext currentRunContext, ITestNGMethod method, ITestContext context) {
-        boolean isDataDriven = currentRunContext.getDataProviderLineIndex() != -1;
+    private void recognizeTestContextOnRerun(TestInvocationContext currentRunContext, ITestNGMethod method, ITestContext context) {
+        int dataProviderLineIndex = currentRunContext.getDataProviderLineIndex();
+        boolean isDataDriven = dataProviderLineIndex != -1;
         if (isDataDriven) {
-            int originalIndex = RunContextService.getOriginDataProviderIndex(currentRunContext.getDataProviderLineIndex(), method, context);
+            int originalIndex = RunContextService.getOriginDataProviderIndex(dataProviderLineIndex, method, context);
             if (originalIndex != -1) {
                 currentRunContext.setDataProviderLineIndex(originalIndex);
             }
         }
-
-        return currentRunContext;
     }
 
     private TestInvocationContext buildUuid(ITestResult testResult) {
