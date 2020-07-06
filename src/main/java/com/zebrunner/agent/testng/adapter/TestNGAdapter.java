@@ -9,6 +9,7 @@ import com.zebrunner.agent.core.registrar.TestRunStartDescriptor;
 import com.zebrunner.agent.core.registrar.TestStartDescriptor;
 import com.zebrunner.agent.testng.core.FactoryInstanceHolder;
 import com.zebrunner.agent.testng.core.TestInvocationContext;
+import com.zebrunner.agent.testng.listener.RetryService;
 import com.zebrunner.agent.testng.listener.RunContextService;
 import org.testng.ISuite;
 import org.testng.ITestContext;
@@ -78,28 +79,24 @@ public class TestNGAdapter {
     }
 
     public void registerHeadlessTestStart(ITestResult testResult) {
-        ITestNGMethod resultMethod = testResult.getMethod();
-        if (resultMethod instanceof ConfigurationMethod) {
-            ConfigurationMethod method = (ConfigurationMethod) resultMethod;
+        if (isRetryFinished(testResult.getMethod(), testResult.getTestContext())) {
+            ITestNGMethod testToExecute = getNextInvokedTest(testResult);
+            if (testToExecute != null) {
+                RunContextService.setHeadlessWasExecuted(testToExecute, testResult.getTestContext());
 
-            boolean register = method.isBeforeMethodConfiguration();
-            if (register) {
-                ITestNGMethod testToExecute = getNextInvokedTest(testResult);
-                if (testToExecute != null) {
-                    RunContextService.setHeadlessWasExecuted(testToExecute, testResult.getTestContext());
+                TestInvocationContext testContext = buildHeadlessTestInvocationContext(testToExecute, testResult
+                        .getTestContext());
+                TestStartDescriptor testStartDescriptor = buildHeadlessTestStartDescriptor(testResult, testContext);
 
-                    TestInvocationContext testContext = buildHeadlessTestInvocationContext(testToExecute, testResult.getTestContext());
-                    TestStartDescriptor testStartDescriptor = buildHeadlessTestStartDescriptor(testResult, testContext);
-
-                    String id = generateTestId(testContext);
-                    registrar.startHeadlessTest(id, testStartDescriptor);
-                }
+                String id = generateTestId(testContext);
+                registrar.startHeadlessTest(id, testStartDescriptor);
             }
         }
     }
 
     /**
      * Finds next method to execute according configuration methods
+     *
      * @param tr to check
      * @return next method to execute or null if operation does not supported
      */
@@ -124,14 +121,16 @@ public class TestNGAdapter {
 
     /**
      * Indicated that method was prepared and will be executed next
-     * @param method to check
+     *
+     * @param method  to check
      * @param context to check
      * @return true if method will be executed next
      */
     private boolean isPreparedToRun(ITestNGMethod method, ITestContext context) {
         int currentInvocationCount = method.getCurrentInvocationCount();
         boolean methodWasCompletedOrPreparedToStart = methodWasCompletedOrPreparedToStart(method);
-        boolean notCompleted = method.isDataDriven() ? currentInvocationCount < RunContextService.getDataProviderSize(method, context)
+        boolean notCompleted = method.isDataDriven() ? currentInvocationCount < RunContextService
+                .getDataProviderSize(method, context)
                 : currentInvocationCount == 0;
         return methodWasCompletedOrPreparedToStart && notCompleted;
     }
@@ -143,6 +142,7 @@ public class TestNGAdapter {
     /**
      * Indicates that method was completed or was prepared to run.
      * Not prepared or not executed methods don't have id parameter
+     *
      * @param method to check
      * @return true if method was executed or prepared to run
      */
@@ -183,7 +183,7 @@ public class TestNGAdapter {
         int dataProviderLineIndex = RunContextService.getDataProviderCurrentIndex(testMethod, context);
         int invocationCount = RunContextService.getMethodInvocationCount(testMethod, context);
         if (RunContextService.isHeadlessWasExecuted(testMethod, context)) {
-            invocationCount ++;
+            invocationCount++;
         }
         TestInvocationContext testContext = buildUuid(testMethod, dataProviderLineIndex, invocationCount);
         return buildTestInvocationContext(testContext, testMethod, context);
@@ -191,7 +191,7 @@ public class TestNGAdapter {
 
     private TestInvocationContext buildTestInvocationContext(TestInvocationContext testContext, ITestNGMethod testMethod, ITestContext context) {
         if (RerunContextHolder.isRerun()) {
-            testContext = recognizeTestContextOnRerun(testContext, testMethod, context);
+            recognizeTestContextOnRerun(testContext, testMethod, context);
         }
         return testContext;
     }
@@ -279,8 +279,8 @@ public class TestNGAdapter {
         int lineIndex = testMethod.isDataDriven() ? dataProviderLineIndex : -1;
 
         Test testAnnotation = testMethod.getConstructorOrMethod()
-                              .getMethod()
-                              .getAnnotation(org.testng.annotations.Test.class);
+                                        .getMethod()
+                                        .getAnnotation(org.testng.annotations.Test.class);
         if (testAnnotation != null) {
             displayName = testAnnotation.testName();
         }
@@ -303,22 +303,23 @@ public class TestNGAdapter {
     }
 
     private boolean isRetryFinished(ITestNGMethod method, ITestContext context) {
-        return RunContextService.isRetryFinished(method, context);
+        return RetryService.isRetryFinished(method, context);
     }
 
     private boolean wasRetry(ITestNGMethod method, ITestContext context) {
-        return !RunContextService.getRetryFailureReasons(method, context).isEmpty();
+        return !RetryService.getRetryFailureReasons(method, context).isEmpty();
     }
 
     private String collectRetryMessages(ITestNGMethod method, ITestContext context) {
         StringBuilder message = new StringBuilder();
         if (wasRetry(method, context)) {
-            Map<Integer, String> failureReasons = RunContextService.getRetryFailureReasons(method, context);
+            Map<Integer, String> failureReasons = RetryService.getRetryFailureReasons(method, context);
 
             failureReasons.forEach((index, msg) -> message.append("Retry index is ")
                                                           .append(index)
                                                           .append("\n")
-                                                          .append(msg));
+                                                          .append(msg)
+                                                          .append("\n"));
         }
         return message.toString();
     }

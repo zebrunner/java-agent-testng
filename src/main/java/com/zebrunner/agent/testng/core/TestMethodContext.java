@@ -1,6 +1,5 @@
 package com.zebrunner.agent.testng.core;
 
-import com.zebrunner.agent.testng.core.retry.RetryContext;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -34,12 +33,6 @@ public class TestMethodContext {
      * Marks that test is used by `dependsOnMethods` or `dependsOnGroups` from other test
      */
     private boolean forceRerun;
-
-    /**
-     * Key is a parameter index
-     * Value is a retry context
-     */
-    private RetryContext retryContext;
 
     /**
      * Represents size of data provider

@@ -49,7 +49,7 @@ public class TestInvocationContext {
         buildParameters.add(displayName);
         buildParameters.add(String.join(", ", parameterClassNames));
 
-        if (dataProviderLineIndex > 0) {
+        if (dataProviderLineIndex != -1) {
             builderPattern.append("[%d]");
             buildParameters.add(dataProviderLineIndex);
         }
@@ -90,7 +90,7 @@ public class TestInvocationContext {
         buildParameters.add(methodName);
         buildParameters.add(String.join(", ", parameterClassNames));
 
-        if (dataProviderLineIndex > 0) {
+        if (dataProviderLineIndex != -1) {
             builderPattern.append("[%d]");
             buildParameters.add(dataProviderLineIndex);
         }
