@@ -27,7 +27,7 @@ public class RetryAnalyzerInterceptor implements IRetryAnalyzer {
         ITestNGMethod method = result.getMethod();
         ITestContext context = result.getTestContext();
 
-        retryAnalyzer = getOriginalRetryAnalyzer(context);
+        retryAnalyzer = getOriginalRetryAnalyzer(context, method);
         boolean needRetry = retryAnalyzer.retry(result);
         if (needRetry) {
             RetryService.setRetryStarted(method, context);
@@ -40,9 +40,12 @@ public class RetryAnalyzerInterceptor implements IRetryAnalyzer {
         return needRetry;
     }
 
-    private IRetryAnalyzer getOriginalRetryAnalyzer(ITestContext context) {
-        Class<? extends IRetryAnalyzer> retryAnalyzerClass = RetryService.getRetryAnalyzerClass(context);
-        return retryAnalyzer == null ? InstanceCreator.newInstance(retryAnalyzerClass) : retryAnalyzer;
+    private IRetryAnalyzer getOriginalRetryAnalyzer(ITestContext context, ITestNGMethod method) {
+        return retryAnalyzer != null
+                ? retryAnalyzer
+                : RetryService.getRetryAnalyzerClass(context, method)
+                              .map(InstanceCreator::newInstance)
+                              .orElseThrow(() -> new RuntimeException("There are no retry analyzer to apply."));
     }
 
 }

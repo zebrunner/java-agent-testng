@@ -23,6 +23,10 @@ public class RunContextService {
     private RunContextService() {
     }
 
+    static void setInvocationContexts(List<TestInvocationContext> invocationContexts) {
+        RunContextService.invocationContexts = invocationContexts;
+    }
+
     public static void incrementMethodInvocationCount(ITestNGMethod method, ITestContext context) {
         getOrInitRerunContext(method, context)
                 .incrementInvocationCount();
@@ -31,16 +35,6 @@ public class RunContextService {
     public static int getMethodInvocationCount(ITestNGMethod method, ITestContext context) {
         return getOrInitRerunContext(method, context)
                 .getCurrentInvocationCount();
-    }
-
-    public static void setHeadlessWasExecuted(ITestNGMethod method, ITestContext context) {
-        getOrInitRerunContext(method, context)
-                .setHeadlessWasExecuted(true);
-    }
-
-    public static boolean isHeadlessWasExecuted(ITestNGMethod method, ITestContext context) {
-        return getOrInitRerunContext(method, context)
-                .isHeadlessWasExecuted();
     }
 
     public static void setOriginalDataProviderIndex(Integer index, ITestNGMethod method, ITestContext context) {
@@ -63,12 +57,6 @@ public class RunContextService {
     public static void setDataProviderSize(ITestNGMethod method, ITestContext context, int size) {
         getOrInitRerunContext(method, context)
                 .setDataProviderSize(size);
-    }
-
-    public static int getDataProviderSize(ITestNGMethod method, ITestContext context) {
-        return getRerunContext(method, context)
-                .map(TestMethodContext::getDataProviderSize)
-                .orElse(0);
     }
 
     public static void setDataProviderCurrentIndex(ITestNGMethod method, ITestContext context, int index) {
@@ -118,9 +106,10 @@ public class RunContextService {
      * @return method uuid in the following format: "fully-qualified-class-name.method-name(argType1,argType2)[instanceNumber]"
      */
     private static String constructMethodUuid(ITestNGMethod method) {
-        String pattern = "%s.%s(%s)[%d]";
+        String pattern = "[%s]: %s.%s(%s)[%d]";
         ConstructorOrMethod constructorOrMethod = method.getConstructorOrMethod();
 
+        String thread = Thread.currentThread().getName();
         String className = method.getTestClass().getName();
         String methodName = constructorOrMethod.getName();
         String argumentTypes = Arrays.stream(constructorOrMethod.getParameterTypes())
@@ -128,7 +117,7 @@ public class RunContextService {
                                      .collect(Collectors.joining(","));
         int instanceIndex = FactoryInstanceHolder.getInstanceIndex(method);
 
-        return String.format(pattern, className, methodName, argumentTypes, instanceIndex);
+        return String.format(pattern, thread, className, methodName, argumentTypes, instanceIndex);
     }
 
     /**
@@ -144,19 +133,27 @@ public class RunContextService {
                                  .collect(Collectors.toList());
     }
 
-    private static boolean belongsToTheSameFactoryInstance(TestInvocationContext invocationContext, ITestNGMethod method) {
-        int index = FactoryInstanceHolder.getInstanceIndex(method);
-        return invocationContext.getInstanceIndex() == index;
-    }
-
     /**
      * Checks if test execution context has the same method signature as test method provided
      */
     private static boolean belongsToMethod(TestInvocationContext invocationContext, ITestNGMethod method) {
+        String contextParameters = String.join(", ", invocationContext.getParameterClassNames());
+        String methodParameters = String.join(", ", getMethodParameterNames(method));
+
         return invocationContext.getClassName().equals(method.getTestClass().getName())
                 && invocationContext.getMethodName().equals(method.getMethodName())
-                && getMethodParameterNamesAsString(invocationContext.getParameterClassNames())
-                .equals(getMethodParameterNamesAsString(method));
+                && contextParameters.equals(methodParameters);
+    }
+
+    private static List<String> getMethodParameterNames(ITestNGMethod method) {
+        return Arrays.stream(method.getConstructorOrMethod().getParameterTypes())
+                     .map(Class::getName)
+                     .collect(Collectors.toList());
+    }
+
+    private static boolean belongsToTheSameFactoryInstance(TestInvocationContext invocationContext, ITestNGMethod method) {
+        int index = FactoryInstanceHolder.getInstanceIndex(method);
+        return invocationContext.getInstanceIndex() == index;
     }
 
     public static int getOriginDataProviderIndex(int newIndex, ITestNGMethod method, ITestContext context) {
@@ -167,25 +164,6 @@ public class RunContextService {
                          .findFirst()
                          .orElse(-1)
         ).orElse(-1);
-    }
-
-    static void setInvocationContexts(List<TestInvocationContext> invocationContexts) {
-        RunContextService.invocationContexts = invocationContexts;
-    }
-
-    private static String getMethodParameterNamesAsString(ITestNGMethod method) {
-        List<String> methodParameterNames = getMethodParameterNames(method);
-        return getMethodParameterNamesAsString(methodParameterNames);
-    }
-
-    private static List<String> getMethodParameterNames(ITestNGMethod method) {
-        return Arrays.stream(method.getConstructorOrMethod().getParameterTypes())
-                     .map(Class::getName)
-                     .collect(Collectors.toList());
-    }
-
-    private static String getMethodParameterNamesAsString(List<String> methodParameterNames) {
-        return String.join(", ", methodParameterNames);
     }
 
 }

@@ -24,7 +24,7 @@ public class TestRunListener extends RerunAwareListener implements ISuiteListene
 
     @Override
     public void onStart(ISuite suite) {
-        adapter.registerRunOrSuiteStart(suite);
+        adapter.registerRunStart(suite);
     }
 
     @Override

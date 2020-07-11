@@ -19,11 +19,6 @@ public class TestMethodContext {
     private AtomicInteger currentInvocationCount = new AtomicInteger(0);
 
     /**
-     * Indicates that headless method was executed
-     */
-    private boolean headlessWasExecuted;
-
-    /**
      * Index of list element - current index
      * Item value - old index
      */

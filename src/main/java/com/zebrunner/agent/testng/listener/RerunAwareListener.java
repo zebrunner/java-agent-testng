@@ -7,6 +7,7 @@ import com.zebrunner.agent.core.rest.domain.TestDTO;
 import com.zebrunner.agent.testng.core.FactoryInstanceHolder;
 import com.zebrunner.agent.testng.core.TestInvocationContext;
 import com.zebrunner.agent.testng.core.retry.RetryAnalyzerInterceptor;
+import lombok.RequiredArgsConstructor;
 import org.testng.IDataProviderInterceptor;
 import org.testng.IDataProviderMethod;
 import org.testng.IMethodInstance;
@@ -81,21 +82,17 @@ public class RerunAwareListener implements RerunListener, IDataProviderIntercept
                 }
                 return result;
             }
+
         };
     }
 
-    private class TrackableIterator implements Iterator<Object[]> {
+    @RequiredArgsConstructor
+    private static class TrackableIterator implements Iterator<Object[]> {
 
         private final Iterator<Object[]> originalIterator;
         private final ITestNGMethod method;
         private final ITestContext context;
-        private Integer parameterIndex;
-
-        public TrackableIterator(Iterator<Object[]> originalIterator, ITestNGMethod method, ITestContext context) {
-            this.originalIterator = originalIterator;
-            this.method = method;
-            this.context = context;
-        }
+        private int parameterIndex = 0;
 
         @Override
         public boolean hasNext() {
@@ -104,14 +101,10 @@ public class RerunAwareListener implements RerunListener, IDataProviderIntercept
 
         @Override
         public Object[] next() {
-            if (parameterIndex == null) {
-                parameterIndex = 0;
-            } else {
-                parameterIndex++;
-            }
-            RunContextService.setDataProviderCurrentIndex(method, context, parameterIndex);
+            RunContextService.setDataProviderCurrentIndex(method, context, parameterIndex++);
             return originalIterator.next();
         }
+
     }
 
     /**
@@ -164,7 +157,7 @@ public class RerunAwareListener implements RerunListener, IDataProviderIntercept
                         }
 
                         // Collect data providers line to rerun
-                        collectDataProviderLinesForRerun(invocationsForRerun, method, runner);
+                        collectDataProvidersForRerun(invocationsForRerun, method, runner);
                     } else {
                         // If method is not needed to rerun (according first hierarchy dependant methods logic)
                         methodsToSkipOnRerun.add(methodInstance);
@@ -189,7 +182,7 @@ public class RerunAwareListener implements RerunListener, IDataProviderIntercept
      */
     private void addRetryInterceptor(ITestContext context, ITestNGMethod method, Class<? extends IRetryAnalyzer> retryAnalyser) {
         if (retryAnalyser != null && !retryAnalyser.isAssignableFrom(RetryAnalyzerInterceptor.class)) {
-            RetryService.setRetryAnalyzerClass(retryAnalyser, context);
+            RetryService.setRetryAnalyzerClass(retryAnalyser, context, method);
             method.setRetryAnalyzerClass(RetryAnalyzerInterceptor.class);
         }
     }
@@ -297,13 +290,11 @@ public class RerunAwareListener implements RerunListener, IDataProviderIntercept
         return String.format("%d:%s", instanceHashCode, name);
     }
 
-    private void collectDataProviderLinesForRerun(List<TestInvocationContext> invocationContexts, ITestNGMethod method, ITestContext context) {
-        invocationContexts.forEach(invocationContext -> {
-            int index = invocationContext.getDataProviderLineIndex();
-            if (index != -1) {
-                RunContextService.setOriginalDataProviderIndex(index, method, context);
-            }
-        });
+    private void collectDataProvidersForRerun(List<TestInvocationContext> invocationContexts, ITestNGMethod method, ITestContext context) {
+        invocationContexts.stream()
+                          .mapToInt(TestInvocationContext::getDataProviderIndex)
+                          .filter(index -> index != -1)
+                          .forEach(index -> RunContextService.setOriginalDataProviderIndex(index, method, context));
     }
 
 }

@@ -1,6 +1,7 @@
 package com.zebrunner.agent.testng.core;
 
 import com.google.gson.Gson;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -14,52 +15,41 @@ import java.util.List;
  */
 @Getter
 @Setter
+@Builder
 @NoArgsConstructor
+@AllArgsConstructor
 public class TestInvocationContext {
 
-    private final static Gson gson = new Gson();
+    private final static Gson GSON = new Gson();
+    private static final int MAX_DISPLAY_NAME_LENGTH = 255;
 
+    private final String thread = Thread.currentThread().getName();
     private String className;
     private String methodName;
     private String displayName;
+    private List<String> parameters;
     private List<String> parameterClassNames;
-    private int dataProviderLineIndex;
+    private int dataProviderIndex;
     private int instanceIndex;
     private int invocationIndex;
 
-    @Builder
-    public TestInvocationContext(String className, String methodName, String displayName,
-                                 List<String> parameterClassNames, int dataProviderLineIndex, int instanceIndex,
-                                 int invocationIndex) {
-        this.className = className;
-        this.methodName = methodName;
-        this.displayName = displayName;
-        this.parameterClassNames = parameterClassNames;
-        this.dataProviderLineIndex = dataProviderLineIndex;
-        this.instanceIndex = instanceIndex;
-        this.invocationIndex = invocationIndex;
-    }
+    public String buildDisplayName() {
+        String displayName = this.displayName == null || this.displayName.isEmpty()
+                ? this.methodName
+                : this.displayName;
 
-    public String buildUniqueDisplayName() {
-        StringBuilder builderPattern = new StringBuilder("%s(%s)");
-
-        List<Object> buildParameters = new ArrayList<>();
-
-        String displayName = this.displayName == null || this.displayName.isEmpty() ? this.methodName : this.displayName;
-        buildParameters.add(displayName);
-        buildParameters.add(String.join(", ", parameterClassNames));
-
-        if (dataProviderLineIndex != -1) {
-            builderPattern.append("[%d]");
-            buildParameters.add(dataProviderLineIndex);
-        }
+        StringBuilder displayNameBuilder = new StringBuilder(displayName);
+        displayNameBuilder.append('(')
+                          .append(String.join(", ", parameters))
+                          .append(')');
 
         if (instanceIndex != -1) {
-            builderPattern.append(" ")
-                          .append("(%d)");
-            buildParameters.add(instanceIndex);
+            displayNameBuilder.append(" (").append(instanceIndex).append(')');
         }
-        return String.format(builderPattern.toString(), buildParameters.toArray());
+
+        return displayNameBuilder.length() > 255
+                ? displayNameBuilder.replace(126, displayNameBuilder.length() - 126, "...").toString()
+                : displayNameBuilder.toString();
     }
 
     @Override
@@ -83,16 +73,17 @@ public class TestInvocationContext {
 
     @Override
     public String toString() {
-        StringBuilder builderPattern = new StringBuilder("%s.%s(%s)");
+        StringBuilder builderPattern = new StringBuilder("[%s]: %s.%s(%s)");
 
         List<Object> buildParameters = new ArrayList<>();
+        buildParameters.add(Thread.currentThread().getName());
         buildParameters.add(className);
         buildParameters.add(methodName);
         buildParameters.add(String.join(", ", parameterClassNames));
 
-        if (dataProviderLineIndex != -1) {
+        if (dataProviderIndex != -1) {
             builderPattern.append("[%d]");
-            buildParameters.add(dataProviderLineIndex);
+            buildParameters.add(dataProviderIndex);
         }
 
         if (instanceIndex != -1) {
@@ -111,10 +102,11 @@ public class TestInvocationContext {
     }
 
     public String asJsonString() {
-        return gson.toJson(this);
+        return GSON.toJson(this);
     }
 
     public static TestInvocationContext fromJsonString(String jsonContext) {
-        return gson.fromJson(jsonContext, TestInvocationContext.class);
+        return GSON.fromJson(jsonContext, TestInvocationContext.class);
     }
+
 }
