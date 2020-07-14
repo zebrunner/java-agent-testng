@@ -64,7 +64,7 @@ public class RerunAwareListener implements RerunListener, IDataProviderIntercept
     }
 
     private Iterator<Object[]> filterDataProviderIndices(Iterator<Object[]> original, Set<Integer> rerunIndices) {
-        return new Iterator<>() {
+        return new Iterator<Object[]>() {
 
             private int index = 0;
 
