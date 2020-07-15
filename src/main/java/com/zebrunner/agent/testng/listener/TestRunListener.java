@@ -1,17 +1,20 @@
 package com.zebrunner.agent.testng.listener;
 
 import com.zebrunner.agent.testng.adapter.TestNGAdapter;
+import org.testng.IConfigurationListener;
 import org.testng.ISuite;
 import org.testng.ISuiteListener;
 import org.testng.ITestContext;
 import org.testng.ITestListener;
 import org.testng.ITestNGListener;
+import org.testng.ITestNGMethod;
 import org.testng.ITestResult;
+import org.testng.internal.ConfigurationMethod;
 
 /**
  * Zebrunner Agent Listener implementation tracking TestNG test run events
  */
-public class TestRunListener extends RerunAwareListener implements ISuiteListener, ITestListener, ITestNGListener {
+public class TestRunListener extends RerunAwareListener implements ISuiteListener, ITestListener, ITestNGListener, IConfigurationListener {
 
     private final TestNGAdapter adapter;
 
@@ -21,7 +24,7 @@ public class TestRunListener extends RerunAwareListener implements ISuiteListene
 
     @Override
     public void onStart(ISuite suite) {
-        adapter.registerRunOrSuiteStart(suite);
+        adapter.registerRunStart(suite);
     }
 
     @Override
@@ -56,12 +59,21 @@ public class TestRunListener extends RerunAwareListener implements ISuiteListene
 
     @Override
     public void onStart(ITestContext context) {
-        System.out.println();
     }
 
     @Override
     public void onFinish(ITestContext context) {
-        System.out.println();
     }
 
+    @Override
+    public void beforeConfiguration(ITestResult tr) {
+        ITestNGMethod resultMethod = tr.getMethod();
+        if (resultMethod instanceof ConfigurationMethod) {
+            ConfigurationMethod method = (ConfigurationMethod) resultMethod;
+
+            if (method.isBeforeMethodConfiguration()) {
+                adapter.registerHeadlessTestStart(tr);
+            }
+        }
+    }
 }

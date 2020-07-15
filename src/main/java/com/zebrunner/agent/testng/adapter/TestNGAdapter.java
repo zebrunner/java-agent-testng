@@ -9,15 +9,17 @@ import com.zebrunner.agent.core.registrar.TestRunStartDescriptor;
 import com.zebrunner.agent.core.registrar.TestStartDescriptor;
 import com.zebrunner.agent.testng.core.FactoryInstanceHolder;
 import com.zebrunner.agent.testng.core.TestInvocationContext;
+import com.zebrunner.agent.testng.listener.RetryService;
 import com.zebrunner.agent.testng.listener.RunContextService;
 import org.testng.ISuite;
 import org.testng.ITestContext;
 import org.testng.ITestNGMethod;
 import org.testng.ITestResult;
-import org.testng.internal.ConstructorOrMethod;
-import org.testng.internal.TestNGMethod;
+import org.testng.annotations.Test;
+import org.testng.internal.TestResult;
 import org.testng.xml.XmlSuite;
 
+import java.lang.reflect.Method;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
@@ -39,7 +41,7 @@ public class TestNGAdapter {
         this.registrar = TestRunRegistrar.registrar();
     }
 
-    public void registerRunOrSuiteStart(ISuite suite) {
+    public void registerRunStart(ISuite suite) {
         if (rootXmlSuite == null) {
             XmlSuite xmlSuite = suite.getXmlSuite();
 
@@ -66,29 +68,68 @@ public class TestNGAdapter {
 
             RunContextService.incrementMethodInvocationCount(testResult.getMethod(), testResult.getTestContext());
 
-            long startedAtMillis = testResult.getStartMillis();
-            OffsetDateTime startedAt = ofMillis(startedAtMillis);
-
-            ITestNGMethod testMethod = testResult.getMethod();
-            ConstructorOrMethod testConstructorOrMethod = testMethod.getConstructorOrMethod();
-
-            TestInvocationContext testContext = buildUuid(testResult);
-            if (RerunContextHolder.isRerun()) {
-                recognizeTestContextOnRerun(testContext, testMethod, testResult.getTestContext());
-            }
-
+            TestInvocationContext testContext = resolveTestInvocationContext(testResult);
             String uuid = testContext.asJsonString();
-            String displayName = testContext.buildUniqueDisplayName();
-            String maintainer = rootXmlSuite.getParameter("maintainer");
-
-            Class<?> testClass = testResult.getTestClass().getRealClass();
-            TestStartDescriptor testStartDescriptor = new TestStartDescriptor(
-                    uuid, displayName, startedAt, maintainer, testClass, testConstructorOrMethod.getMethod()
-            );
+            TestStartDescriptor testStartDescriptor = buildTestStartDescriptor(uuid, testResult, testContext);
 
             String id = generateTestId(testContext);
             registrar.startTest(id, testStartDescriptor);
         }
+    }
+
+    public void registerHeadlessTestStart(ITestResult testResult) {
+        if (isRetryFinished(testResult.getMethod(), testResult.getTestContext())) {
+
+            TestInvocationContext testContext = buildHeadlessTestInvocationContext(testResult);
+            TestStartDescriptor testStartDescriptor = buildTestStartDescriptor(null, testResult, testContext);
+
+            String id = generateTestId(testContext);
+            registrar.startHeadlessTest(id, testStartDescriptor);
+        }
+    }
+
+    private TestStartDescriptor buildTestStartDescriptor(String uuid, ITestResult testResult, TestInvocationContext testContext) {
+        long startedAtMillis = testResult.getStartMillis();
+        OffsetDateTime startedAt = ofMillis(startedAtMillis);
+
+        Method method = testResult.getMethod().getConstructorOrMethod().getMethod();
+        Class<?> realClass = testResult.getTestClass().getRealClass();
+        String maintainer = rootXmlSuite.getParameter("maintainer");
+        String displayName = testContext.buildDisplayName();
+
+        return new TestStartDescriptor(uuid, displayName, startedAt, maintainer, realClass, method);
+    }
+
+    private TestInvocationContext resolveTestInvocationContext(ITestResult testResult) {
+        TestInvocationContext testContext = buildTestInvocationContext(testResult);
+        return recognizeTestContextOnRerun(testContext, testResult.getMethod(), testResult.getTestContext());
+    }
+
+    private TestInvocationContext buildHeadlessTestInvocationContext(ITestResult testResult) {
+        ITestNGMethod method = testResult.getMethod();
+        ITestContext context = testResult.getTestContext();
+
+        int dataProviderIndex = RunContextService.getDataProviderCurrentIndex(method, context);
+        int invocationCount = RunContextService.getMethodInvocationCount(method, context);
+        Object[] parameters = testResult.getParameters();
+
+        TestInvocationContext testContext = buildTestInvocationContext(method, dataProviderIndex, parameters, invocationCount);
+        return recognizeTestContextOnRerun(testContext, method, context);
+    }
+
+    private TestInvocationContext recognizeTestContextOnRerun(TestInvocationContext testContext, ITestNGMethod method, ITestContext context) {
+        if (RerunContextHolder.isRerun()) {
+            int dataProviderLineIndex = testContext.getDataProviderIndex();
+            boolean isDataDriven = dataProviderLineIndex != -1;
+            if (isDataDriven) {
+                int originalIndex = RunContextService
+                        .getOriginDataProviderIndex(dataProviderLineIndex, method, context);
+                if (originalIndex != -1) {
+                    testContext.setDataProviderIndex(originalIndex);
+                }
+            }
+        }
+        return testContext;
     }
 
     public void registerTestFinish(ITestResult testResult) {
@@ -101,7 +142,7 @@ public class TestNGAdapter {
 
             TestFinishDescriptor testFinishDescriptor = new TestFinishDescriptor(Status.PASSED, endedAt, retryMessage);
 
-            TestInvocationContext testContext = buildUuid(testResult);
+            TestInvocationContext testContext = buildTestInvocationContext(testResult);
             String id = generateTestId(testContext);
             registrar.finishTest(id, testFinishDescriptor);
         }
@@ -110,7 +151,7 @@ public class TestNGAdapter {
     public void registerFailedTestFinish(ITestResult testResult) {
         if (isRetryFinished(testResult.getMethod(), testResult.getTestContext())) {
 
-            TestInvocationContext testContext = buildUuid(testResult);
+            TestInvocationContext testContext = buildTestInvocationContext(testResult);
             String id = generateTestId(testContext);
 
             if (!registrar.isTestStarted(id)) {
@@ -135,7 +176,7 @@ public class TestNGAdapter {
             long endedAtMillis = testResult.getEndMillis();
             OffsetDateTime endedAt = ofMillis(endedAtMillis);
 
-            TestInvocationContext testContext = buildUuid(testResult);
+            TestInvocationContext testContext = buildTestInvocationContext(testResult);
 
             String message;
             if (wasRetry(testResult.getMethod(), testResult.getTestContext())) {
@@ -150,69 +191,62 @@ public class TestNGAdapter {
         }
     }
 
-    private void recognizeTestContextOnRerun(TestInvocationContext currentRunContext, ITestNGMethod method, ITestContext context) {
-        int dataProviderLineIndex = currentRunContext.getDataProviderLineIndex();
-        boolean isDataDriven = dataProviderLineIndex != -1;
-        if (isDataDriven) {
-            int originalIndex = RunContextService.getOriginDataProviderIndex(dataProviderLineIndex, method, context);
-            if (originalIndex != -1) {
-                currentRunContext.setDataProviderLineIndex(originalIndex);
-            }
-        }
+    private TestInvocationContext buildTestInvocationContext(ITestResult testResult) {
+        ITestNGMethod testMethod = testResult.getMethod();
+        int dataProviderIndex = ((TestResult) testResult).getParameterIndex();
+        Object[] parameters = testResult.getParameters();
+        int invocationCount = RunContextService.getMethodInvocationCount(testMethod, testResult.getTestContext());
+
+        return buildTestInvocationContext(testMethod, dataProviderIndex, parameters, invocationCount);
     }
 
-    private TestInvocationContext buildUuid(ITestResult testResult) {
-        TestNGMethod testMethod = (TestNGMethod) testResult.getMethod();
-
-        String displayName;
-        List<String> parameterClassNames;
-        int dataProviderLineIndex = -1;
-
-        displayName = testMethod.getConstructorOrMethod()
-                                .getMethod()
-                                .getAnnotation(org.testng.annotations.Test.class)
-                                .testName();
-
-        parameterClassNames = Arrays.stream(testMethod.getConstructorOrMethod().getParameterTypes())
-                                    .map(Class::getName)
-                                    .collect(Collectors.toList());
-
-        if (testMethod.isDataDriven()) {
-            dataProviderLineIndex = ((org.testng.internal.TestResult) testResult).getParameterIndex();
+    private TestInvocationContext buildTestInvocationContext(ITestNGMethod testMethod, int dataProviderIndex, Object[] parameters, int invocationCount) {
+        String displayName = null;
+        Test testAnnotation = testMethod.getConstructorOrMethod()
+                                        .getMethod()
+                                        .getAnnotation(org.testng.annotations.Test.class);
+        if (testAnnotation != null) {
+            displayName = testAnnotation.testName();
         }
 
+        List<String> stringParameters = Arrays.stream(parameters)
+                                              .map(Object::toString)
+                                              .collect(Collectors.toList());
+        List<String> parameterClassNames = Arrays.stream(testMethod.getConstructorOrMethod().getParameterTypes())
+                                                 .map(Class::getName)
+                                                 .collect(Collectors.toList());
         int instanceIndex = FactoryInstanceHolder.getInstanceIndex(testMethod);
-
-        int invocationCount = RunContextService.getMethodInvocationCount(testMethod, testResult.getTestContext());
 
         return TestInvocationContext.builder()
                                     .className(testMethod.getTestClass().getName())
                                     .methodName(testMethod.getMethodName())
                                     .displayName(displayName)
+                                    .parameters(stringParameters)
                                     .parameterClassNames(parameterClassNames)
-                                    .dataProviderLineIndex(dataProviderLineIndex)
+                                    .dataProviderIndex(dataProviderIndex)
                                     .instanceIndex(instanceIndex)
                                     .invocationIndex(invocationCount)
                                     .build();
     }
 
     private boolean isRetryFinished(ITestNGMethod method, ITestContext context) {
-        return RunContextService.isRetryFinished(method, context);
+        return RetryService.isRetryFinished(method, context);
     }
 
     private boolean wasRetry(ITestNGMethod method, ITestContext context) {
-        return !RunContextService.getRetryFailureReasons(method, context).isEmpty();
+        return !RetryService.getRetryFailureReasons(method, context).isEmpty();
     }
 
     private String collectRetryMessages(ITestNGMethod method, ITestContext context) {
         StringBuilder message = new StringBuilder();
         if (wasRetry(method, context)) {
-            Map<Integer, String> failureReasons = RunContextService.getRetryFailureReasons(method, context);
+            Map<Integer, String> failureReasons = RetryService.getRetryFailureReasons(method, context);
 
             failureReasons.forEach((index, msg) -> message.append("Retry index is ")
                                                           .append(index)
                                                           .append("\n")
-                                                          .append(msg));
+                                                          .append(msg)
+                                                          .append("\n"));
         }
         return message.toString();
     }

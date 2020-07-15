@@ -5,13 +5,13 @@ import lombok.Setter;
 
 import java.util.Map;
 
-@Getter
-@Setter
 public class RetryItemContext {
 
     /**
      * key is retry count, value is a failed cause
      */
+    @Getter
+    @Setter
     private Map<Integer, String> retryFailedReasons;
 
     /**
@@ -19,9 +19,19 @@ public class RetryItemContext {
      */
     private boolean started;
 
-    /**
-     * Is true if retry analyzer is finished
-     */
-    private boolean finished;
+    public void setStarted() {
+        this.started = true;
+    }
 
+    public void setFinished() {
+        this.started = false;
+    }
+
+    public boolean isStarted() {
+        return started;
+    }
+
+    public boolean isFinished() {
+        return !started;
+    }
 }

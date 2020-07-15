@@ -1,11 +1,13 @@
 package com.zebrunner.agent.testng.listener;
 
+import com.google.common.collect.Lists;
+import com.zebrunner.agent.core.listener.RerunListener;
 import com.zebrunner.agent.core.registrar.RerunContextHolder;
-import com.zebrunner.agent.core.rerun.RerunListener;
 import com.zebrunner.agent.core.rest.domain.TestDTO;
 import com.zebrunner.agent.testng.core.FactoryInstanceHolder;
 import com.zebrunner.agent.testng.core.TestInvocationContext;
 import com.zebrunner.agent.testng.core.retry.RetryAnalyzerInterceptor;
+import lombok.RequiredArgsConstructor;
 import org.testng.IDataProviderInterceptor;
 import org.testng.IDataProviderMethod;
 import org.testng.IMethodInstance;
@@ -34,28 +36,35 @@ public class RerunAwareListener implements RerunListener, IDataProviderIntercept
 
     /**
      * Processes test UUIDs in order to restore original test execution context for appropriate test
+     *
      * @param testDTOs tests
      * @return collection of test execution contexts
      */
     private List<TestInvocationContext> getInvocationContexts(List<TestDTO> testDTOs) {
-        return testDTOs.stream().map(test -> TestInvocationContext.fromJsonString(test.getUuid())).collect(Collectors.toList());
+        return testDTOs.stream().map(test -> TestInvocationContext.fromJsonString(test.getUuid()))
+                       .collect(Collectors.toList());
     }
 
     @Override
     public Iterator<Object[]> intercept(Iterator<Object[]> original, IDataProviderMethod dataProviderMethod, ITestNGMethod method, ITestContext context) {
+        Iterator<Object[]> result;
         if (RerunContextHolder.isRerun()) {
             Set<Integer> indices = RunContextService.getDataProviderIndicesForRerun(method, context);
             boolean forced = RunContextService.isForceRerun(method, context);
             boolean filterIndices = !indices.isEmpty() && !forced;
 
-            return filterIndices ? filterDataProviderIndices(original, indices) : original;
+            result = filterIndices ? filterDataProviderIndices(original, indices) : original;
         } else {
-            return original;
+            result = original;
         }
+        List<Object[]> resultAsList = Lists.newArrayList(result);
+        RunContextService.setDataProviderSize(method, context, resultAsList.size());
+
+        return new TrackableIterator(resultAsList.iterator(), method, context);
     }
 
     private Iterator<Object[]> filterDataProviderIndices(Iterator<Object[]> original, Set<Integer> rerunIndices) {
-        return new Iterator<>() {
+        return new Iterator<Object[]>() {
 
             private int index = 0;
 
@@ -73,14 +82,36 @@ public class RerunAwareListener implements RerunListener, IDataProviderIntercept
                 }
                 return result;
             }
+
         };
+    }
+
+    @RequiredArgsConstructor
+    private static class TrackableIterator implements Iterator<Object[]> {
+
+        private final Iterator<Object[]> originalIterator;
+        private final ITestNGMethod method;
+        private final ITestContext context;
+        private int parameterIndex = 0;
+
+        @Override
+        public boolean hasNext() {
+            return originalIterator.hasNext();
+        }
+
+        @Override
+        public Object[] next() {
+            RunContextService.setDataProviderCurrentIndex(method, context, parameterIndex++);
+            return originalIterator.next();
+        }
+
     }
 
     /**
      * Used to alter TestNG test run plan - before every test method invocation this interceptor will be called to check
      * if this test method is present in rerun plan. If method is not present or does not depends on method in rerun plan -
      * it will be dropped from test run plan.
-     *
+     * <p>
      * This interceptor is executed every time test method is discovered.
      *
      * @param methods initial set of test methods discovered by TestNG for this test run
@@ -126,7 +157,7 @@ public class RerunAwareListener implements RerunListener, IDataProviderIntercept
                         }
 
                         // Collect data providers line to rerun
-                        collectDataProviderLinesForRerun(invocationsForRerun, method, runner);
+                        collectDataProvidersForRerun(invocationsForRerun, method, runner);
                     } else {
                         // If method is not needed to rerun (according first hierarchy dependant methods logic)
                         methodsToSkipOnRerun.add(methodInstance);
@@ -144,29 +175,31 @@ public class RerunAwareListener implements RerunListener, IDataProviderIntercept
 
     /**
      * If test method has a retry analyser - register analyser interceptor to keep track of retry count
-     * @param context test context
-     * @param method test method
+     *
+     * @param context       test context
+     * @param method        test method
      * @param retryAnalyser test method's retry analyser
      */
     private void addRetryInterceptor(ITestContext context, ITestNGMethod method, Class<? extends IRetryAnalyzer> retryAnalyser) {
         if (retryAnalyser != null && !retryAnalyser.isAssignableFrom(RetryAnalyzerInterceptor.class)) {
-            RunContextService.setRetryAnalyzerClass(retryAnalyser, method, context);
+            RetryService.setRetryAnalyzerClass(retryAnalyser, context, method);
             method.setRetryAnalyzerClass(RetryAnalyzerInterceptor.class);
         }
     }
 
     /**
      * Finds all dependant methods (and their own dependants, if any) and remove their from methodsToSkipOnRerun and dependantNames
-     * @param methods methods discovered by TestNG for this test run
-     * @param dependantMethods dependant method names
-     * @param dependantGroups dependant group names
+     *
+     * @param methods              methods discovered by TestNG for this test run
+     * @param dependantMethods     dependant method names
+     * @param dependantGroups      dependant group names
      * @param methodsToSkipOnRerun initial set of methods to skip on rerun, that can be altered if contains dependant methods
-     * @param context test context
+     * @param context              test context
      */
     private void resolveDependantMethods(List<IMethodInstance> methods, Set<String> dependantMethods, Set<String> dependantGroups,
                                          Set<IMethodInstance> methodsToSkipOnRerun, ITestContext context) {
         boolean dependantMethodExists = true; // Flag needs to identify not defined dependant methods or groups
-        while(dependantMethodExists) {
+        while (dependantMethodExists) {
             dependantMethodExists = false;
             for (IMethodInstance methodInstance : methods) {
                 ITestNGMethod method = methodInstance.getMethod();
@@ -241,29 +274,27 @@ public class RerunAwareListener implements RerunListener, IDataProviderIntercept
         Set<String> dependantMethods = new HashSet<>(Arrays.asList(method.getMethodsDependedUpon()));
         int instanceIndex = FactoryInstanceHolder.getInstanceIndex(method);
         return dependantMethods.stream()
-                                .map(dependsUponMethod -> buildDependsUponKey(dependsUponMethod, instanceIndex))
-                                .collect(Collectors.toSet());
+                               .map(dependsUponMethod -> buildDependsUponKey(dependsUponMethod, instanceIndex))
+                               .collect(Collectors.toSet());
     }
 
     private Set<String> collectDependantGroups(ITestNGMethod method) {
         Set<String> dependantGroups = new HashSet<>(Arrays.asList(method.getGroupsDependedUpon()));
         int instanceIndex = FactoryInstanceHolder.getInstanceIndex(method);
         return dependantGroups.stream()
-                                .map(dependsUponGroup -> buildDependsUponKey(dependsUponGroup, instanceIndex))
-                                .collect(Collectors.toSet());
+                              .map(dependsUponGroup -> buildDependsUponKey(dependsUponGroup, instanceIndex))
+                              .collect(Collectors.toSet());
     }
 
     private String buildDependsUponKey(String name, long instanceHashCode) {
         return String.format("%d:%s", instanceHashCode, name);
     }
 
-    private void collectDataProviderLinesForRerun(List<TestInvocationContext> invocationContexts, ITestNGMethod method, ITestContext context) {
-        invocationContexts.forEach(invocationContext -> {
-            int index = invocationContext.getDataProviderLineIndex();
-            if (index != -1) {
-                RunContextService.setOriginalDataProviderIndex(index, method, context);
-            }
-        });
+    private void collectDataProvidersForRerun(List<TestInvocationContext> invocationContexts, ITestNGMethod method, ITestContext context) {
+        invocationContexts.stream()
+                          .mapToInt(TestInvocationContext::getDataProviderIndex)
+                          .filter(index -> index != -1)
+                          .forEach(index -> RunContextService.setOriginalDataProviderIndex(index, method, context));
     }
 
 }

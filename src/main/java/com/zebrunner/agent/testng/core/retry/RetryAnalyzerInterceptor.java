@@ -1,6 +1,6 @@
 package com.zebrunner.agent.testng.core.retry;
 
-import com.zebrunner.agent.testng.listener.RunContextService;
+import com.zebrunner.agent.testng.listener.RetryService;
 import org.testng.IRetryAnalyzer;
 import org.testng.ITestContext;
 import org.testng.ITestNGMethod;
@@ -27,20 +27,25 @@ public class RetryAnalyzerInterceptor implements IRetryAnalyzer {
         ITestNGMethod method = result.getMethod();
         ITestContext context = result.getTestContext();
 
-        retryAnalyzer = getOriginalRetryAnalyzer(method, context);
+        retryAnalyzer = getOriginalRetryAnalyzer(context, method);
         boolean needRetry = retryAnalyzer.retry(result);
         if (needRetry) {
-            RunContextService.setRetryStarted(method, context);
-            RunContextService.setRetryFailureReason(index.incrementAndGet(), result.getThrowable().getMessage(), method, context);
+            RetryService.setRetryStarted(method, context);
+
+            String message = result.getThrowable().getMessage();
+            RetryService.setRetryFailureReason(index.incrementAndGet(), message, method, context);
         } else {
-            RunContextService.setRetryFinished(method, context);
+            RetryService.setRetryFinished(method, context);
         }
         return needRetry;
     }
 
-    private IRetryAnalyzer getOriginalRetryAnalyzer(ITestNGMethod method, ITestContext context) {
-        Class<? extends IRetryAnalyzer> retryAnalyzerClass = RunContextService.getRetryAnalyzerClass(method, context);
-        return retryAnalyzer == null ? InstanceCreator.newInstance(retryAnalyzerClass) : retryAnalyzer;
+    private IRetryAnalyzer getOriginalRetryAnalyzer(ITestContext context, ITestNGMethod method) {
+        return retryAnalyzer != null
+                ? retryAnalyzer
+                : RetryService.getRetryAnalyzerClass(context, method)
+                              .map(InstanceCreator::newInstance)
+                              .orElseThrow(() -> new RuntimeException("There are no retry analyzer to apply."));
     }
 
 }

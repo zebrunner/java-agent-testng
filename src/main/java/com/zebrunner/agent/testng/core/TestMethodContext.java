@@ -1,6 +1,5 @@
 package com.zebrunner.agent.testng.core;
 
-import com.zebrunner.agent.testng.core.retry.RetryContext;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -31,10 +30,14 @@ public class TestMethodContext {
     private boolean forceRerun;
 
     /**
-     * Key is a parameter index
-     * Value is a retry context
+     * Represents size of data provider
      */
-    private RetryContext retryContext;
+    private int dataProviderSize;
+
+    /**
+     * Represents current index of data provider
+     */
+    private int dataProviderCurrentIndex;
 
     public void incrementInvocationCount() {
         currentInvocationCount.incrementAndGet();
