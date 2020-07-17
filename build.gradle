@@ -16,7 +16,7 @@ repositories {
 }
 
 dependencies {
-    implementation("com.zebrunner:agent-core:1.1.0.66-SNAPSHOT")
+    api("com.zebrunner:agent-core:1.1.0.71-SNAPSHOT")
     implementation("org.testng:testng:7.1.0")
     implementation("com.google.code.gson:gson:2.8.6")
 
