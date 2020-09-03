@@ -215,7 +215,7 @@ public class TestNGAdapter {
         List<String> parameterClassNames = Arrays.stream(testMethod.getConstructorOrMethod().getParameterTypes())
                                                  .map(Class::getName)
                                                  .collect(Collectors.toList());
-        int instanceIndex = FactoryInstanceHolder.getInstanceIndex(testMethod);
+        int instanceIndex = FactoryInstanceHolder.getDisplayingInstanceIndex(testMethod);
 
         return TestInvocationContext.builder()
                                     .className(testMethod.getTestClass().getName())

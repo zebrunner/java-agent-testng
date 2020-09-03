@@ -43,8 +43,25 @@ public class TestInvocationContext {
                           .append(String.join(", ", parameters))
                           .append(')');
 
-        if (instanceIndex != -1) {
-            displayNameBuilder.append(" (").append(instanceIndex).append(')');
+        // if there is instance index or if the test method have been executed more than once within run
+        if (instanceIndex != -1 || invocationIndex > 1) {
+            displayNameBuilder.append(" [");
+
+            // if there is instance index (will have non -1 value only if there are more then 1 instance)
+            if (instanceIndex != -1) {
+                // instance indexes start from 0, so the displayed value is adjusted to start from 1
+                displayNameBuilder.append("Instance: ").append(instanceIndex + 1);
+            }
+            // if the test method have been executed more than once within run
+            if (invocationIndex > 1) {
+                // if there are also more then 1 instance, then append delimiter between these indexes
+                if (instanceIndex != -1) {
+                    displayNameBuilder.append(", ");
+                }
+                displayNameBuilder.append("Invocation: ").append(invocationIndex);
+            }
+
+            displayNameBuilder.append("]");
         }
 
         return displayNameBuilder.length() > 255

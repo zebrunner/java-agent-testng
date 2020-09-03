@@ -6,6 +6,7 @@ import org.testng.internal.ParameterInfo;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -51,8 +52,26 @@ public class FactoryInstanceHolder {
      */
     public static int getInstanceIndex(ITestNGMethod method) {
         if (method.getInstance() != null) {
-            List<Object> instances = CLASS_NAME_TO_INSTANCES.get(method.getTestClass().getName());
+            String className = method.getTestClass().getName();
+            List<Object> instances = CLASS_NAME_TO_INSTANCES.getOrDefault(className, Collections.emptyList());
             return instances.indexOf(method.getInstance());
+        }
+        return -1;
+    }
+
+    /**
+     * Returns index of specific factory instance that will reported in Zebrunner for this test method.
+     *
+     * @param method test method
+     * @return factory instance index. If test method does not belong to factory instance or there is only one instance of test class, then -1 will be returned
+     */
+    public static int getDisplayingInstanceIndex(ITestNGMethod method) {
+        if (method.getInstance() != null) {
+            String className = method.getTestClass().getName();
+            List<Object> instances = CLASS_NAME_TO_INSTANCES.getOrDefault(className, Collections.emptyList());
+            if (instances.size() > 1) {
+                return instances.indexOf(method.getInstance());
+            }
         }
         return -1;
     }
