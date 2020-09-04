@@ -5,6 +5,8 @@ plugins {
 group = 'com.zebrunner'
 version = "${version != 'unspecified' ? version : '1.0-SNAPSHOT'}"
 
+ext.coreVersion = project.properties['core.version'] ?: '1.0.0'
+
 repositories {
     mavenCentral()
     maven {
@@ -16,7 +18,7 @@ repositories {
 }
 
 dependencies {
-    api("com.zebrunner:agent-core:1.1.0.72-SNAPSHOT")
+    api("com.zebrunner:agent-core:${coreVersion}")
     implementation("org.testng:testng:7.1.0")
     implementation("com.google.code.gson:gson:2.8.6")
 
