@@ -201,7 +201,7 @@ Add **log4j2.xml** to resources folder:
 </configuration>
 ```
 
-### Sample logger usage:
+### Logger usage
 ```
 import java.lang.invoke.MethodHandles;
 import org.slf4j.Logger;
