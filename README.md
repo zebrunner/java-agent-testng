@@ -100,16 +100,26 @@ It is possible to configure additional reporting capabilities improving your tra
 
 ## Collecting test logs
 
-It is also possible to enable log collection for your tests. Currently three logging frameworks are supported out of the box: logback, log4j, log4j2.
+It is also possible to enable log collection for your tests. Currently three logging frameworks are supported out of the box: logback, log4j, log4j2. We recommend to reuse slf4j (Simlpe Logging Facade for Java) which provide abstraction for logging libraries.
 In order to enable logging all you have to do is register reporting appender in your test framework configuration file.
 
 ### Logback
-Add dependency:
+Add dependencies:
 ```
 <dependency>
-    <groupId>ch.qos.logback</groupId>
-    <artifactId>logback-classic</artifactId>
-    <version>1.2.3</version>
+	<groupId>org.slf4j</groupId>
+	<artifactId>slf4j-api</artifactId>
+	<version>1.7.30</version>
+</dependency>
+<dependency>
+	<groupId>ch.qos.logback</groupId>
+	<artifactId>logback-core</artifactId>
+	<version>1.2.3</version>
+</dependency>
+<dependency>
+	<groupId>ch.qos.logback</groupId>
+	<artifactId>logback-classic</artifactId>
+	<version>1.2.3</version>
 </dependency>
 ```
 
@@ -132,10 +142,11 @@ Sample logback usage:
 ```
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import java.lang.invoke.MethodHandles;
 
 public class AwesomeTests {
-    
-    private static final Logger LOGGER  = LoggerFactory.getLogger(AwesomeTests.class);
+    // MethodHandles return AwesomeTests.class 
+    private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
     @Test
     public void awesomeTest() {
@@ -146,8 +157,13 @@ public class AwesomeTests {
 
 
 ### Log4j
-Add dependency:
+Add dependencies:
 ```
+<dependency>
+	<groupId>org.slf4j</groupId>
+	<artifactId>slf4j-api</artifactId>
+	<version>1.7.30</version>
+</dependency>
 <dependency>
     <groupId>log4j</groupId>
     <artifactId>log4j</artifactId>
@@ -165,11 +181,14 @@ log4j.appender.zebrunner.layout.conversionPattern=pattern">[%d{HH:mm:ss}] %-5p (
 
 Sample logger usage:
 ```
-import org.apache.log4j.Logger;
+import java.lang.invoke.MethodHandles;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class AwesomeTests {
     
-    private Logger LOGGER = Logger.getLogger(AwesomeTests.class);
+    // MethodHandles return AwesomeTests.class 
+    private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
     @Test
     public void awesomeTest() {
@@ -180,8 +199,13 @@ public class AwesomeTests {
 
 
 ### Log4j2
-Add dependency:
+Add dependencies:
 ```
+<dependency>
+	<groupId>org.slf4j</groupId>
+	<artifactId>slf4j-api</artifactId>
+	<version>1.7.30</version>
+</dependency>
 <dependency>
 	<groupId>org.apache.logging.log4j</groupId>
 	<artifactId>log4j-api</artifactId>
@@ -217,12 +241,14 @@ Add **log4j2.xml** to resources folder:
 
 Sample logger usage:
 ```
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import java.lang.invoke.MethodHandles;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class AwesomeTests {
     
-    private Logger LOGGER = LogManager.getLogger(AwesomeTests.class);;
+    // MethodHandles return AwesomeTests.class 
+    private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
     @Test
     public void awesomeTest() {
