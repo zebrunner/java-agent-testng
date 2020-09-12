@@ -138,24 +138,6 @@ Add **logback.xml** to resources folder:
 </configuration>
 ```
 
-Sample logback usage:
-```
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import java.lang.invoke.MethodHandles;
-
-public class AwesomeTests {
-    // MethodHandles return AwesomeTests.class 
-    private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
-
-    @Test
-    public void awesomeTest() {
-        LOGGER.info("Test info");
-    }
-}
-```
-
-
 ### Log4j
 Add dependencies:
 ```
@@ -178,25 +160,6 @@ log4j.appender.zebrunner=com.zebrunner.agent.core.appender.log4j.ReportingAppend
 log4j.appender.zebrunner.layout=org.apache.log4j.PatternLayout
 log4j.appender.zebrunner.layout.conversionPattern=pattern">[%d{HH:mm:ss}] %-5p (%F:%L) - %m%n
 ```
-
-Sample logger usage:
-```
-import java.lang.invoke.MethodHandles;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-public class AwesomeTests {
-    
-    // MethodHandles return AwesomeTests.class 
-    private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
-
-    @Test
-    public void awesomeTest() {
-        LOGGER.info("Test info");
-    }
-}
-```
-
 
 ### Log4j2
 Add dependencies:
@@ -238,8 +201,7 @@ Add **log4j2.xml** to resources folder:
 </configuration>
 ```
 
-
-Sample logger usage:
+### Sample logger usage:
 ```
 import java.lang.invoke.MethodHandles;
 import org.slf4j.Logger;
