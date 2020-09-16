@@ -7,8 +7,12 @@ import com.zebrunner.agent.core.registrar.TestRunFinishDescriptor;
 import com.zebrunner.agent.core.registrar.TestRunRegistrar;
 import com.zebrunner.agent.core.registrar.TestRunStartDescriptor;
 import com.zebrunner.agent.core.registrar.TestStartDescriptor;
+import com.zebrunner.agent.core.registrar.maintainer.ChainedMaintainerResolver;
 import com.zebrunner.agent.testng.core.FactoryInstanceHolder;
+import com.zebrunner.agent.testng.core.RootXmlSuiteMaintainerResolver;
 import com.zebrunner.agent.testng.core.TestInvocationContext;
+import com.zebrunner.agent.testng.core.testname.TestNameResolver;
+import com.zebrunner.agent.testng.core.testname.TestNameResolverRegistry;
 import com.zebrunner.agent.testng.listener.RetryService;
 import com.zebrunner.agent.testng.listener.RunContextService;
 import org.testng.ISuite;
@@ -53,6 +57,9 @@ public class TestNGAdapter {
             }
             String name = rootXmlSuite.getName();
 
+            RootXmlSuiteMaintainerResolver maintainerResolver = new RootXmlSuiteMaintainerResolver(rootXmlSuite);
+            ChainedMaintainerResolver.addFirst(maintainerResolver);
+
             registrar.start(new TestRunStartDescriptor(name, "testng", OffsetDateTime.now(), name));
         }
     }
@@ -70,7 +77,7 @@ public class TestNGAdapter {
 
             TestInvocationContext testContext = resolveTestInvocationContext(testResult);
             String uuid = testContext.asJsonString();
-            TestStartDescriptor testStartDescriptor = buildTestStartDescriptor(uuid, testResult, testContext);
+            TestStartDescriptor testStartDescriptor = buildTestStartDescriptor(uuid, testResult);
 
             String id = generateTestId(testContext);
             registrar.startTest(id, testStartDescriptor);
@@ -81,23 +88,24 @@ public class TestNGAdapter {
         if (isRetryFinished(testResult.getMethod(), testResult.getTestContext())) {
 
             TestInvocationContext testContext = buildHeadlessTestInvocationContext(testResult);
-            TestStartDescriptor testStartDescriptor = buildTestStartDescriptor(null, testResult, testContext);
+            TestStartDescriptor testStartDescriptor = buildTestStartDescriptor(null, testResult);
 
             String id = generateTestId(testContext);
             registrar.startHeadlessTest(id, testStartDescriptor);
         }
     }
 
-    private TestStartDescriptor buildTestStartDescriptor(String uuid, ITestResult testResult, TestInvocationContext testContext) {
+    private TestStartDescriptor buildTestStartDescriptor(String uuid, ITestResult testResult) {
         long startedAtMillis = testResult.getStartMillis();
         OffsetDateTime startedAt = ofMillis(startedAtMillis);
 
         Method method = testResult.getMethod().getConstructorOrMethod().getMethod();
         Class<?> realClass = testResult.getTestClass().getRealClass();
-        String maintainer = rootXmlSuite.getParameter("maintainer");
-        String displayName = testContext.buildDisplayName();
 
-        return new TestStartDescriptor(uuid, displayName, startedAt, maintainer, realClass, method);
+        TestNameResolver testNameResolver = TestNameResolverRegistry.get();
+        String displayName = testNameResolver.resolve(testResult);
+
+        return new TestStartDescriptor(uuid, displayName, startedAt, realClass, method);
     }
 
     private TestInvocationContext resolveTestInvocationContext(ITestResult testResult) {
