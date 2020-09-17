@@ -41,7 +41,7 @@ public class DefaultTestNameResolver implements TestNameResolver {
         if (expectedInvocationCount > 1) {
             // adding extra zero at the beginning of the invocation count (inspired by Vadim Delendik)
             int indexMaxLength = Integer.toString(expectedInvocationCount).length() + 1;
-            String lineFormat = " (InvCount=%0" + indexMaxLength + "d)";
+            String lineFormat = " [InvCount=%0" + indexMaxLength + "d]";
 
             int currentInvocationCount = testNameToInvCounter.computeIfAbsent(testName, $ -> new AtomicInteger(0))
                                                              .incrementAndGet();
