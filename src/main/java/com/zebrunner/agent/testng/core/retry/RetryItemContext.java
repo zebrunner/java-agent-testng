@@ -27,10 +27,6 @@ public class RetryItemContext {
         this.started = false;
     }
 
-    public boolean isStarted() {
-        return started;
-    }
-
     public boolean isFinished() {
         return !started;
     }

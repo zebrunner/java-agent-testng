@@ -25,9 +25,9 @@ public class DefaultTestNameResolver implements TestNameResolver {
     }
 
     private String appendDataProviderLine(ITestResult testResult, String testName) {
-        if (testResult.getParameters().length > 0) {
+        if (testResult.getMethod().getParameterInvocationCount() > 1) {
             // adding extra zero at the beginning of the data provider line number (inspired by Vadim Delendik)
-            int indexMaxLength = Integer.toString(testResult.getParameters().length + 1).length() + 1;
+            int indexMaxLength = Integer.toString(testResult.getMethod().getParameterInvocationCount()).length() + 1;
             String lineFormat = " [L%0" + indexMaxLength + "d]";
 
             int index = ((TestResult) testResult).getParameterIndex() + 1;
