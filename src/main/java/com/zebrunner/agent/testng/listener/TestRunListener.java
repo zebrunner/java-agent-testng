@@ -53,8 +53,8 @@ public class TestRunListener extends RerunAwareListener implements ISuiteListene
     @Override
     public void onTestSuccess(ITestResult testResult) {
         log.debug("Beginning TestRunListener -> onTestSuccess");
-        RetryService.setRetryFinished(testResult.getMethod(), testResult.getTestContext());
         adapter.registerTestFinish(testResult);
+        RetryService.setRetryFinished(testResult.getMethod(), testResult.getTestContext());
         log.debug("Finishing TestRunListener -> onTestSuccess");
     }
 
