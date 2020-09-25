@@ -55,7 +55,7 @@ public class RetryService {
         return String.format(pattern, className, methodName, argumentTypes, instanceIndex);
     }
 
-    private static String buildRetryAnalyzerClassKey(ITestResult result) {
+    public static String buildRetryAnalyzerClassKey(ITestResult result) {
         String pattern = "retry-analyzer-class-%s.%s(%s)[%d][%d]";
         ConstructorOrMethod constructorOrMethod = result.getMethod().getConstructorOrMethod();
 
