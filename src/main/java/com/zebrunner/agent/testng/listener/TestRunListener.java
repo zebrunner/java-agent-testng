@@ -45,7 +45,10 @@ public class TestRunListener extends RerunAwareListener implements ISuiteListene
     @Override
     public void onTestStart(ITestResult testResult) {
         log.debug("Beginning TestRunListener -> onTestStart");
-        RunContextService.incrementMethodInvocationCount(testResult.getMethod(), testResult.getTestContext());
+        if (RetryService.isRetryFinished(testResult.getMethod(), testResult.getTestContext())) {
+            // incrementing invocation count should be done for real tests and not retry!
+            RunContextService.incrementMethodInvocationCount(testResult.getMethod(), testResult.getTestContext());
+        }
         adapter.registerTestStart(testResult);
         log.debug("Finishing TestRunListener -> onTestStart");
     }
@@ -54,7 +57,6 @@ public class TestRunListener extends RerunAwareListener implements ISuiteListene
     public void onTestSuccess(ITestResult testResult) {
         log.debug("Beginning TestRunListener -> onTestSuccess");
         adapter.registerTestFinish(testResult);
-        RetryService.setRetryFinished(testResult.getMethod(), testResult.getTestContext());
         log.debug("Finishing TestRunListener -> onTestSuccess");
     }
 

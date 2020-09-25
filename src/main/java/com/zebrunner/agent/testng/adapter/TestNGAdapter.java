@@ -150,22 +150,19 @@ public class TestNGAdapter {
     }
 
     public void registerTestFinish(ITestResult testResult) {
-        if (isRetryFinished(testResult.getMethod(), testResult.getTestContext())) {
-            log.debug("TestNGAdapter -> registerTestFinish: retry is finished");
+        long endedAtMillis = testResult.getEndMillis();
+        OffsetDateTime endedAt = ofMillis(endedAtMillis);
 
-            long endedAtMillis = testResult.getEndMillis();
-            OffsetDateTime endedAt = ofMillis(endedAtMillis);
+        String retryMessage = collectRetryMessages(testResult.getMethod(), testResult.getTestContext());
 
-            String retryMessage = collectRetryMessages(testResult.getMethod(), testResult.getTestContext());
+        TestFinishDescriptor testFinishDescriptor = new TestFinishDescriptor(Status.PASSED, endedAt, retryMessage);
 
-            TestFinishDescriptor testFinishDescriptor = new TestFinishDescriptor(Status.PASSED, endedAt, retryMessage);
-
-            TestInvocationContext testContext = buildTestInvocationContext(testResult);
-            String id = generateTestId(testContext);
-            registrar.finishTest(id, testFinishDescriptor);
-        } else {
-            log.debug("TestNGAdapter -> registerTestFinish: retry is NOT finished");
-        }
+        TestInvocationContext testContext = buildTestInvocationContext(testResult);
+        String id = generateTestId(testContext);
+        registrar.finishTest(id, testFinishDescriptor);
+        
+        // forcibly disable retry otherwise passed can't be registered in reporting tool!
+        RetryService.setRetryFinished(testResult.getMethod(), testResult.getTestContext());
     }
 
     public void registerFailedTestFinish(ITestResult testResult) {
