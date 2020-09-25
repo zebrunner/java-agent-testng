@@ -136,7 +136,7 @@ public class RerunAwareListener implements RerunListener, IDataProviderIntercept
 
                 // proxy retry analyzer class to provide possibility to handle retry invocations count
                 Class<? extends IRetryAnalyzer> retryAnalyser = method.getRetryAnalyzerClass();
-                addRetryInterceptor(context, method, retryAnalyser);
+                    addRetryInterceptor(context, method, retryAnalyser);
 
                 if (RerunContextHolder.isRerun()) {
 

@@ -6,7 +6,9 @@ import com.zebrunner.agent.testng.core.retry.RetryItemContext;
 import org.testng.IRetryAnalyzer;
 import org.testng.ITestContext;
 import org.testng.ITestNGMethod;
+import org.testng.ITestResult;
 import org.testng.internal.ConstructorOrMethod;
+import org.testng.internal.TestResult;
 
 import java.util.Arrays;
 import java.util.Map;
@@ -24,13 +26,23 @@ public class RetryService {
         context.setAttribute(key, retryAnalyzerClass);
     }
 
+    public static void setRetryAnalyzerClass(Class<? extends IRetryAnalyzer> retryAnalyzerClass, ITestResult result) {
+        String key = buildRetryAnalyzerClassKey(result);
+        result.getTestContext().setAttribute(key, retryAnalyzerClass);
+    }
+
     public static Optional<Class<? extends IRetryAnalyzer>> getRetryAnalyzerClass(ITestContext context, ITestNGMethod method) {
         String key = buildRetryAnalyzerClassKey(method);
         return Optional.ofNullable(((Class<? extends IRetryAnalyzer>) context.getAttribute(key)));
     }
 
+    public static Optional<Class<? extends IRetryAnalyzer>> getRetryAnalyzerClass(ITestResult result) {
+        String key = buildRetryAnalyzerClassKey(result);
+        return Optional.ofNullable(((Class<? extends IRetryAnalyzer>) result.getTestContext().getAttribute(key)));
+    }
+
     private static String buildRetryAnalyzerClassKey(ITestNGMethod method) {
-        String pattern = "retry-analyzer-class-%s.%s(%s)[%d]";
+        String pattern = "retry-analyzer-class-%s.%s(%s)";
         ConstructorOrMethod constructorOrMethod = method.getConstructorOrMethod();
 
         String className = method.getTestClass().getName();
@@ -41,6 +53,21 @@ public class RetryService {
         int instanceIndex = FactoryInstanceHolder.getInstanceIndex(method);
 
         return String.format(pattern, className, methodName, argumentTypes, instanceIndex);
+    }
+
+    private static String buildRetryAnalyzerClassKey(ITestResult result) {
+        String pattern = "retry-analyzer-class-%s.%s(%s)[%d][%d]";
+        ConstructorOrMethod constructorOrMethod = result.getMethod().getConstructorOrMethod();
+
+        String className = result.getMethod().getTestClass().getName();
+        String methodName = constructorOrMethod.getName();
+        String argumentTypes = Arrays.stream(constructorOrMethod.getParameterTypes())
+                                     .map(Class::getName)
+                                     .collect(Collectors.joining(","));
+        int instanceIndex = FactoryInstanceHolder.getInstanceIndex(result.getMethod());
+        int parameterIndex = ((TestResult) result).getParameterIndex();
+
+        return String.format(pattern, className, methodName, argumentTypes, instanceIndex, parameterIndex);
     }
 
     public static Map<Integer, String> getRetryFailureReasons(ITestNGMethod method, ITestContext context) {
