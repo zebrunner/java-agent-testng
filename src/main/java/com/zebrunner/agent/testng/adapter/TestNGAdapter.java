@@ -15,6 +15,8 @@ import com.zebrunner.agent.testng.core.testname.TestNameResolver;
 import com.zebrunner.agent.testng.core.testname.TestNameResolverRegistry;
 import com.zebrunner.agent.testng.listener.RetryService;
 import com.zebrunner.agent.testng.listener.RunContextService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.testng.ISuite;
 import org.testng.ITestContext;
 import org.testng.ITestNGMethod;
@@ -23,6 +25,7 @@ import org.testng.annotations.Test;
 import org.testng.internal.TestResult;
 import org.testng.xml.XmlSuite;
 
+import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Method;
 import java.time.Instant;
 import java.time.OffsetDateTime;
@@ -36,6 +39,8 @@ import java.util.stream.Collectors;
  * Adapter used to convert TestNG test domain to Zebrunner Agent domain
  */
 public class TestNGAdapter {
+
+    private static final Logger log = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
     private final TestRunRegistrar registrar;
 
@@ -72,6 +77,7 @@ public class TestNGAdapter {
 
     public void registerTestStart(ITestResult testResult) {
         if (isRetryFinished(testResult.getMethod(), testResult.getTestContext())) {
+            log.debug("TestNGAdapter -> registerTestStart: retry is finished");
 
             RunContextService.incrementMethodInvocationCount(testResult.getMethod(), testResult.getTestContext());
 
@@ -81,17 +87,22 @@ public class TestNGAdapter {
 
             String id = generateTestId(testContext);
             registrar.startTest(id, testStartDescriptor);
+        } else {
+            log.debug("TestNGAdapter -> registerTestStart: retry is NOT finished");
         }
     }
 
     public void registerHeadlessTestStart(ITestResult testResult) {
         if (isRetryFinished(testResult.getMethod(), testResult.getTestContext())) {
+            log.debug("TestNGAdapter -> registerHeadlessTestStart: retry is finished");
 
             TestInvocationContext testContext = buildHeadlessTestInvocationContext(testResult);
             TestStartDescriptor testStartDescriptor = buildTestStartDescriptor(null, testResult);
 
             String id = generateTestId(testContext);
             registrar.startHeadlessTest(id, testStartDescriptor);
+        } else {
+            log.debug("TestNGAdapter -> registerHeadlessTestStart: retry is NOT finished");
         }
     }
 
@@ -142,6 +153,7 @@ public class TestNGAdapter {
 
     public void registerTestFinish(ITestResult testResult) {
         if (isRetryFinished(testResult.getMethod(), testResult.getTestContext())) {
+            log.debug("TestNGAdapter -> registerTestFinish: retry is finished");
 
             long endedAtMillis = testResult.getEndMillis();
             OffsetDateTime endedAt = ofMillis(endedAtMillis);
@@ -153,11 +165,14 @@ public class TestNGAdapter {
             TestInvocationContext testContext = buildTestInvocationContext(testResult);
             String id = generateTestId(testContext);
             registrar.finishTest(id, testFinishDescriptor);
+        } else {
+            log.debug("TestNGAdapter -> registerTestFinish: retry is NOT finished");
         }
     }
 
     public void registerFailedTestFinish(ITestResult testResult) {
         if (isRetryFinished(testResult.getMethod(), testResult.getTestContext())) {
+            log.debug("TestNGAdapter -> registerFailedTestFinish: retry is finished");
 
             TestInvocationContext testContext = buildTestInvocationContext(testResult);
             String id = generateTestId(testContext);
@@ -175,11 +190,14 @@ public class TestNGAdapter {
 
             TestFinishDescriptor result = new TestFinishDescriptor(Status.FAILED, endedAt, message);
             registrar.finishTest(id, result);
+        } else {
+            log.debug("TestNGAdapter -> registerFailedTestFinish: retry is NOT finished");
         }
     }
 
     public void registerSkippedTestFinish(ITestResult testResult) {
         if (isRetryFinished(testResult.getMethod(), testResult.getTestContext())) {
+            log.debug("TestNGAdapter -> registerSkippedTestFinish: retry is finished");
 
             long endedAtMillis = testResult.getEndMillis();
             OffsetDateTime endedAt = ofMillis(endedAtMillis);
@@ -196,6 +214,8 @@ public class TestNGAdapter {
             TestFinishDescriptor result = new TestFinishDescriptor(Status.SKIPPED, endedAt, message);
             String id = generateTestId(testContext);
             registrar.finishTest(id, result);
+        } else {
+            log.debug("TestNGAdapter -> registerSkippedTestFinish: retry is NOT finished");
         }
     }
 
