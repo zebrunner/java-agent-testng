@@ -45,6 +45,7 @@ public class TestRunListener extends RerunAwareListener implements ISuiteListene
     @Override
     public void onTestStart(ITestResult testResult) {
         log.debug("Beginning TestRunListener -> onTestStart");
+        RunContextService.incrementMethodInvocationCount(testResult.getMethod(), testResult.getTestContext());
         adapter.registerTestStart(testResult);
         log.debug("Finishing TestRunListener -> onTestStart");
     }

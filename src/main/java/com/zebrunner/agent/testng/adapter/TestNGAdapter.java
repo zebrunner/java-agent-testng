@@ -79,8 +79,6 @@ public class TestNGAdapter {
         if (isRetryFinished(testResult.getMethod(), testResult.getTestContext())) {
             log.debug("TestNGAdapter -> registerTestStart: retry is finished");
 
-            RunContextService.incrementMethodInvocationCount(testResult.getMethod(), testResult.getTestContext());
-
             TestInvocationContext testContext = resolveTestInvocationContext(testResult);
             String uuid = testContext.asJsonString();
             TestStartDescriptor testStartDescriptor = buildTestStartDescriptor(uuid, testResult);
