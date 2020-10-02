@@ -7,6 +7,16 @@ version = "${version != 'unspecified' ? version : '1.0-SNAPSHOT'}"
 
 ext.coreVersion = project.properties['core.version'] ?: '1.0.0'
 
+sourceSets {
+    main {
+        if (project.hasProperty('pluggable')) {
+            resources {
+                exclude 'META-INF/services/org.testng.ITestNGListener'
+            }
+        }
+    }
+}
+
 repositories {
     mavenCentral()
     maven {
