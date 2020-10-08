@@ -7,6 +7,8 @@ import org.testng.ITestNGMethod;
 import org.testng.ITestResult;
 import org.testng.internal.InstanceCreator;
 
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -15,37 +17,41 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class RetryAnalyzerInterceptor implements IRetryAnalyzer {
 
-    private final AtomicInteger index;
-    private IRetryAnalyzer retryAnalyzer;
-
-    public RetryAnalyzerInterceptor() {
-        this.index = new AtomicInteger(0);
-    }
+    private final Map<String, AtomicInteger> retryAnalyzerKeyToRetryIndex = new ConcurrentHashMap<>();
+    private final Map<String, IRetryAnalyzer> retryAnalyzerKeyToIdentity = new ConcurrentHashMap<>();
 
     @Override
     public boolean retry(ITestResult result) {
         ITestNGMethod method = result.getMethod();
         ITestContext context = result.getTestContext();
 
-        retryAnalyzer = getOriginalRetryAnalyzer(context, method);
+        IRetryAnalyzer retryAnalyzer = getOriginalRetryAnalyzer(result);
         boolean needRetry = retryAnalyzer.retry(result);
         if (needRetry) {
             RetryService.setRetryStarted(method, context);
 
             String message = result.getThrowable().getMessage();
-            RetryService.setRetryFailureReason(index.incrementAndGet(), message, method, context);
+            RetryService.setRetryFailureReason(getRetryIndex(result), message, method, context);
         } else {
             RetryService.setRetryFinished(method, context);
         }
         return needRetry;
     }
 
-    private IRetryAnalyzer getOriginalRetryAnalyzer(ITestContext context, ITestNGMethod method) {
-        return retryAnalyzer != null
-                ? retryAnalyzer
-                : RetryService.getRetryAnalyzerClass(context, method)
-                              .map(InstanceCreator::newInstance)
-                              .orElseThrow(() -> new RuntimeException("There are no retry analyzer to apply."));
+    private IRetryAnalyzer getOriginalRetryAnalyzer(ITestResult result) {
+        return retryAnalyzerKeyToIdentity.computeIfAbsent(
+                RetryService.buildRetryAnalyzerClassKey(result),
+                $ -> RetryService.getRetryAnalyzerClass(result.getTestContext(), result.getMethod())
+                                 .map(InstanceCreator::newInstance)
+                                 .orElseThrow(() -> new RuntimeException("There are no retry analyzer to apply."))
+        );
+    }
+
+    private int getRetryIndex(ITestResult result) {
+        return retryAnalyzerKeyToRetryIndex.computeIfAbsent(
+                RetryService.buildRetryAnalyzerClassKey(result),
+                $ -> new AtomicInteger(0)
+        ).incrementAndGet();
     }
 
 }
