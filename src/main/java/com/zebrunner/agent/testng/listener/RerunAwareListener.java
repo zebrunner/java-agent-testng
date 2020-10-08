@@ -1,15 +1,11 @@
 package com.zebrunner.agent.testng.listener;
 
-import com.google.common.collect.Lists;
 import com.zebrunner.agent.core.listener.RerunListener;
 import com.zebrunner.agent.core.registrar.RerunContextHolder;
 import com.zebrunner.agent.core.rest.domain.TestDTO;
 import com.zebrunner.agent.testng.core.FactoryInstanceHolder;
 import com.zebrunner.agent.testng.core.TestInvocationContext;
 import com.zebrunner.agent.testng.core.retry.RetryAnalyzerInterceptor;
-import lombok.RequiredArgsConstructor;
-import org.testng.IDataProviderInterceptor;
-import org.testng.IDataProviderMethod;
 import org.testng.IMethodInstance;
 import org.testng.IMethodInterceptor;
 import org.testng.IRetryAnalyzer;
@@ -20,13 +16,12 @@ import org.testng.internal.annotations.DisabledRetryAnalyzer;
 
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class RerunAwareListener implements RerunListener, IDataProviderInterceptor, IMethodInterceptor {
+public class RerunAwareListener implements RerunListener, IMethodInterceptor {
 
     @Override
     public void onRerun(List<TestDTO> tests) {
@@ -43,68 +38,6 @@ public class RerunAwareListener implements RerunListener, IDataProviderIntercept
     private List<TestInvocationContext> getInvocationContexts(List<TestDTO> testDTOs) {
         return testDTOs.stream().map(test -> TestInvocationContext.fromJsonString(test.getUuid()))
                        .collect(Collectors.toList());
-    }
-
-    @Override
-    public Iterator<Object[]> intercept(Iterator<Object[]> original, IDataProviderMethod dataProviderMethod, ITestNGMethod method, ITestContext context) {
-        Iterator<Object[]> result;
-        if (RerunContextHolder.isRerun()) {
-            Set<Integer> indices = RunContextService.getDataProviderIndicesForRerun(method, context);
-            boolean forced = RunContextService.isForceRerun(method, context);
-            boolean filterIndices = !indices.isEmpty() && !forced;
-
-            result = filterIndices ? filterDataProviderIndices(original, indices) : original;
-        } else {
-            result = original;
-        }
-        List<Object[]> resultAsList = Lists.newArrayList(result);
-        RunContextService.setDataProviderSize(method, context, resultAsList.size());
-
-        return new TrackableIterator(resultAsList.iterator(), method, context);
-    }
-
-    private Iterator<Object[]> filterDataProviderIndices(Iterator<Object[]> original, Set<Integer> rerunIndices) {
-        return new Iterator<Object[]>() {
-
-            private int index = 0;
-
-            @Override
-            public boolean hasNext() {
-                return original.hasNext() && rerunIndices.contains(index);
-            }
-
-            @Override
-            public Object[] next() {
-                Object[] result = null;
-                if (rerunIndices.contains(index)) {
-                    result = original.next();
-                    index++;
-                }
-                return result;
-            }
-
-        };
-    }
-
-    @RequiredArgsConstructor
-    private static class TrackableIterator implements Iterator<Object[]> {
-
-        private final Iterator<Object[]> originalIterator;
-        private final ITestNGMethod method;
-        private final ITestContext context;
-        private int parameterIndex = 0;
-
-        @Override
-        public boolean hasNext() {
-            return originalIterator.hasNext();
-        }
-
-        @Override
-        public Object[] next() {
-            RunContextService.setDataProviderCurrentIndex(method, context, parameterIndex++);
-            return originalIterator.next();
-        }
-
     }
 
     /**
@@ -136,7 +69,7 @@ public class RerunAwareListener implements RerunListener, IDataProviderIntercept
 
                 // proxy retry analyzer class to provide possibility to handle retry invocations count
                 Class<? extends IRetryAnalyzer> retryAnalyser = method.getRetryAnalyzerClass();
-                    addRetryInterceptor(context, method, retryAnalyser);
+                addRetryInterceptor(context, method, retryAnalyser);
 
                 if (RerunContextHolder.isRerun()) {
 
