@@ -7,8 +7,6 @@ import org.testng.ITestNGMethod;
 import org.testng.ITestResult;
 import org.testng.internal.InstanceCreator;
 
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -18,7 +16,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class RetryAnalyzerInterceptor implements IRetryAnalyzer {
 
     private final AtomicInteger index;
-    private Map<String, IRetryAnalyzer> retryAnalyzerMap = new ConcurrentHashMap<>();
+    private IRetryAnalyzer retryAnalyzer;
 
     public RetryAnalyzerInterceptor() {
         this.index = new AtomicInteger(0);
@@ -29,7 +27,7 @@ public class RetryAnalyzerInterceptor implements IRetryAnalyzer {
         ITestNGMethod method = result.getMethod();
         ITestContext context = result.getTestContext();
 
-        IRetryAnalyzer retryAnalyzer = getOriginalRetryAnalyzer(result);
+        retryAnalyzer = getOriginalRetryAnalyzer(context, method);
         boolean needRetry = retryAnalyzer.retry(result);
         if (needRetry) {
             RetryService.setRetryStarted(method, context);
@@ -42,13 +40,12 @@ public class RetryAnalyzerInterceptor implements IRetryAnalyzer {
         return needRetry;
     }
 
-    private IRetryAnalyzer getOriginalRetryAnalyzer(ITestResult result) {
-        return retryAnalyzerMap.computeIfAbsent(
-                RetryService.buildRetryAnalyzerClassKey(result),
-                $ -> RetryService.getRetryAnalyzerClass(result)
-                                 .map(InstanceCreator::newInstance)
-                                 .orElseThrow(() -> new RuntimeException("There are no retry analyzer to apply."))
-        );
+    private IRetryAnalyzer getOriginalRetryAnalyzer(ITestContext context, ITestNGMethod method) {
+        return retryAnalyzer != null
+                ? retryAnalyzer
+                : RetryService.getRetryAnalyzerClass(context, method)
+                              .map(InstanceCreator::newInstance)
+                              .orElseThrow(() -> new RuntimeException("There are no retry analyzer to apply."));
     }
 
 }

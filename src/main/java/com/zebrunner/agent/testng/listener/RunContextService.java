@@ -59,6 +59,11 @@ public class RunContextService {
                 .setDataProviderSize(size);
     }
 
+    public static int getDataProviderSize(ITestNGMethod method, ITestContext context) {
+        return getOrInitRerunContext(method, context)
+                .getDataProviderSize();
+    }
+
     public static void setDataProviderCurrentIndex(ITestNGMethod method, ITestContext context, int index) {
         getOrInitRerunContext(method, context)
                 .setDataProviderCurrentIndex(index);

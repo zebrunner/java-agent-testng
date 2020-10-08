@@ -26,19 +26,9 @@ public class RetryService {
         context.setAttribute(key, retryAnalyzerClass);
     }
 
-    public static void setRetryAnalyzerClass(Class<? extends IRetryAnalyzer> retryAnalyzerClass, ITestResult result) {
-        String key = buildRetryAnalyzerClassKey(result);
-        result.getTestContext().setAttribute(key, retryAnalyzerClass);
-    }
-
     public static Optional<Class<? extends IRetryAnalyzer>> getRetryAnalyzerClass(ITestContext context, ITestNGMethod method) {
         String key = buildRetryAnalyzerClassKey(method);
         return Optional.ofNullable(((Class<? extends IRetryAnalyzer>) context.getAttribute(key)));
-    }
-
-    public static Optional<Class<? extends IRetryAnalyzer>> getRetryAnalyzerClass(ITestResult result) {
-        String key = buildRetryAnalyzerClassKey(result);
-        return Optional.ofNullable(((Class<? extends IRetryAnalyzer>) result.getTestContext().getAttribute(key)));
     }
 
     private static String buildRetryAnalyzerClassKey(ITestNGMethod method) {
