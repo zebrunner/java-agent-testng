@@ -8,7 +8,6 @@ import org.testng.ITestContext;
 import org.testng.ITestNGMethod;
 import org.testng.ITestResult;
 import org.testng.internal.ConstructorOrMethod;
-import org.testng.internal.TestResult;
 
 import java.util.Arrays;
 import java.util.Map;
@@ -55,7 +54,7 @@ public class RetryService {
                                      .map(Class::getName)
                                      .collect(Collectors.joining(","));
         int instanceIndex = FactoryInstanceHolder.getInstanceIndex(result.getMethod());
-        int parameterIndex = ((TestResult) result).getParameterIndex();
+        int parameterIndex = RunContextService.getDataProviderCurrentIndex(result.getMethod(), result.getTestContext());
 
         return String.format(pattern, className, methodName, argumentTypes, instanceIndex, parameterIndex);
     }
