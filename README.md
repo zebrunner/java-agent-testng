@@ -14,6 +14,8 @@ To check out the project and build from the source, do the following:
 
 Agent comes bundled with TestNG 7.3.0, so you may want to comment our your dependency or exclude it from the agent.
 
+<!-- tabs:start -->
+
 Gradle:
 ```groovy
 dependencies {
@@ -30,6 +32,8 @@ Maven:
   <scope>test</scope>
 </dependency>
 ```
+
+<!-- tabs:end -->
 
 ## Agent configuration
 
@@ -106,6 +110,8 @@ In order to enable logging all you have to do is register reporting appender in 
 #### Logback
 Add logback (and, optionally, slf4j) dependencies in your build descriptor.
 
+<!-- tabs:start -->
+
 Gradle:
 ```groovy
 dependencies {
@@ -135,6 +141,8 @@ Maven:
 </dependencies>
 ```
 
+<!-- tabs:end -->
+
 Add logging appender in **logback.xml** file. Feel free to adjust the logging pattern according to your needs:
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
@@ -152,6 +160,8 @@ Add logging appender in **logback.xml** file. Feel free to adjust the logging pa
 
 #### Log4j
 Add log4j (and, optionally, slf4j) dependency in your build descriptor.
+
+<!-- tabs:start -->
 
 Gradle:
 ```groovy
@@ -176,6 +186,8 @@ Maven:
 </dependencies>
 ```
 
+<!-- tabs:end -->
+
 Add logging appender in **log4j.properties** file. Feel free to adjust the logging pattern according to your needs:
 ```properties
 log4j.rootLogger = INFO, zebrunner
@@ -186,6 +198,8 @@ log4j.appender.zebrunner.layout.conversionPattern=pattern">[%d{HH:mm:ss}] %-5p (
 
 #### Log4j2
 Add log4j2 (and, optionally, slf4j) dependency in your build descriptor:
+
+<!-- tabs:start -->
 
 Gradle:
 ```groovy
@@ -215,6 +229,8 @@ Maven:
     </dependency>
 </dependencies>
 ```
+
+<!-- tabs:end -->
 
 Add logging appender in **log4j2.xml** file. Feel free to adjust the logging pattern according to your needs:
 ```xml
