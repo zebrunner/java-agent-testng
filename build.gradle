@@ -5,7 +5,7 @@ plugins {
 group = 'com.zebrunner'
 version = "${version != 'unspecified' ? version : '1.0-SNAPSHOT'}"
 
-ext.coreVersion = project.properties['core.version'] ?: '1.0.0'
+ext.coreVersion = project.properties['core.version'] ?: '1.0-SNAPSHOT'
 
 sourceSets {
     main {
@@ -19,9 +19,6 @@ sourceSets {
 
 repositories {
     mavenCentral()
-    maven {
-        url "https://oss.sonatype.org/content/repositories/snapshots/"
-    }
     maven {
         url "https://nexus.zebrunner.dev/repository/ce-snapshots/"
     }
