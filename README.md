@@ -16,14 +16,14 @@ Agent comes bundled with TestNG 7.3.0, so you may want to comment our your depen
 
 <!-- tabs:start -->
 
-Gradle:
+#### **Gradle:**
 ```groovy
 dependencies {
   testImplementation 'com.zebrunner:agent-testng:1.0.0'
 }
 ```
 
-Maven:
+#### **Maven:**
 ```xml
 <dependency>
   <groupId>com.zebrunner</groupId>
@@ -112,7 +112,7 @@ Add logback (and, optionally, slf4j) dependencies in your build descriptor.
 
 <!-- tabs:start -->
 
-Gradle:
+#### **Gradle:**
 ```groovy
 dependencies {
   implementation 'org.slf4j:slf4j-api:1.7.30'
@@ -120,7 +120,7 @@ dependencies {
   implementation 'ch.qos.logback:logback-classic:1.2.3'
 }
 ```
-Maven:
+#### **Maven:**
 ```xml
 <dependencies>
     <dependency>
@@ -163,14 +163,14 @@ Add log4j (and, optionally, slf4j) dependency in your build descriptor.
 
 <!-- tabs:start -->
 
-Gradle:
+#### **Gradle:**
 ```groovy
 dependencies {
   implementation 'org.slf4j:slf4j-api:1.7.30'
   implementation 'log4j:log4j:1.2.17'
 }
 ```
-Maven:
+#### **Maven:**
 ```xml
 <dependencies>
     <dependency>
@@ -201,7 +201,7 @@ Add log4j2 (and, optionally, slf4j) dependency in your build descriptor:
 
 <!-- tabs:start -->
 
-Gradle:
+#### **Gradle:**
 ```groovy
 dependencies {
   implementation 'org.slf4j:slf4j-api:1.7.30'
@@ -209,7 +209,7 @@ dependencies {
   implementation 'org.apache.logging.log4j:log4j-core:2.13.3'
 }
 ```
-Maven:
+#### **Maven:**
 ```xml
 <dependencies>
     <dependency>
