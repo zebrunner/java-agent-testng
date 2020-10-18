@@ -47,10 +47,10 @@ The following configuration parameters are recognized by the agent:
 - `REPORTING_ENABLED` - enables or disables reporting. Default value is `false`. If disabled - agent will use no op component implementations that will simply log output for tracing purpose with `trace` level;
 - `REPORTING_SERVER_HOSTNAME` - mandatory if reporting is enabled. Zebrunner server hostname. Can be obtained in Zebrunner on the 'Account & profile' page under 'Service URL' section;
 - `REPORTING_SERVER_ACCESS_TOKEN` - mandatory if reporting is enabled. Access token to be used to perform API calls. Can be obtained in Zebrunner on the 'Account & profile' page under 'Token' section;
-- `REPORTING_PROJECT_KEY` - the project that the test runs belongs to. Default value is `UNKNOWN`. You can manage projects in Zebrunner in the appropriate section.
-- `REPORTING_RUN_DISPLAY_NAME` - the display name of the test run. Default value is `Default Suite`;
-- `REPORTING_RUN_BUILD` - the build number that is associated with the test run. Optional value. It can depict either the test build number, the application build number, or any other useful information;
-- `REPORTING_RUN_ENVIRONMENT` - the environment in which the tests will run. Optional value. The provided value will be displayed in Zebrunner in the appropriate column.
+- `REPORTING_PROJECT_KEY` - optional value. The project that the test runs belongs to. Default value is `UNKNOWN`. You can manage projects in Zebrunner in the appropriate section.
+- `REPORTING_RUN_DISPLAY_NAME` - optional value. The display name of the test run. Default value is `Default Suite`;
+- `REPORTING_RUN_BUILD` - optional value. The build number that is associated with the test run. It can depict either the test build number, or the application build number;
+- `REPORTING_RUN_ENVIRONMENT` - optional value. The environment in which the tests will run.
 
 ### Program arguments configuration
 The following configuration parameters are recognized by the agent:
@@ -58,10 +58,10 @@ The following configuration parameters are recognized by the agent:
 - `reporting.enabled` - enables or disables reporting. Default value is `false`. If disabled - agent will use no op component implementations that will simply log output for tracing purpose with `trace` level;
 - `reporting.server.hostname` - mandatory if reporting is enabled. Zebrunner server hostname. Can be obtained in Zebrunner on the 'Account & profile' page under 'Service URL' section;
 - `reporting.server.accessToken` - mandatory if reporting is enabled. Access token to be used to perform API calls. Can be obtained in Zebrunner on the 'Account & profile' page under 'Token' section;
-- `reporting.projectKey` - the project that the test runs belongs to. Default value is `UNKNOWN`. You can manage projects in Zebrunner in the appropriate section.
-- `reporting.run.displayName` - the display name of the test run. Default value is `Default Suite`;
-- `reporting.run.build` - the build number that is associated with the test run. Optional value. It can depict either the test build number, the application build number, or any other useful information;
-- `reporting.run.environment` - the environment in which the tests will run. Optional value. The provided value will be displayed in Zebrunner in the appropriate column.
+- `reporting.projectKey` - optional value. The project that the test runs belongs to. Default value is `UNKNOWN`. You can manage projects in Zebrunner in the appropriate section.
+- `reporting.run.displayName` - optional value. The display name of the test run. Default value is `Default Suite`;
+- `reporting.run.build` - optional value. The build number that is associated with the test run. It can depict either the test build number, or the application build number;
+- `reporting.run.environment` - optional value. The environment in which the tests will run.
 
 ### YAML configuration
 Agent recognizes `agent.yaml` or `agent.yml` file residing in resources root folder. It is currently not possible to configure alternative file location.
@@ -84,10 +84,10 @@ reporting:
 - `reporting.enabled` - enables or disables reporting. Default value is `false`. If disabled - agent will use no op component implementations that will simply log output for tracing purpose with `trace` level;
 - `reporting.server.hostname` - mandatory if reporting is enabled. Zebrunner server hostname. Can be obtained in Zebrunner on the 'Account & profile' page under 'Service URL' section;
 - `reporting.server.access-token` - mandatory if reporting is enabled. Access token to be used to perform API calls. Can be obtained in Zebrunner on the 'Account & profile' page under 'Token' section;
-- `reporting.project-key` - the project that the test runs belongs to. Default value is `UNKNOWN`. You can manage projects in Zebrunner in the appropriate section.
-- `reporting.run.display-name` - the display name of the test run. Default value is `Default Suite`;
-- `reporting.run.build` - the build number that is associated with the test run. Optional value. It can depict either the test build number, the application build number, or any other useful information;
-- `reporting.run.environment` - the environment in which the tests will run. Optional value. The provided value will be displayed in Zebrunner in the appropriate column.
+- `reporting.project-key` - optional value. The project that the test runs belongs to. Default value is `UNKNOWN`. You can manage projects in Zebrunner in the appropriate section.
+- `reporting.run.display-name` - optional value. The display name of the test run. Default value is `Default Suite`;
+- `reporting.run.build` - optional value. The build number that is associated with the test run. It can depict either the test build number, or the application build number;
+- `reporting.run.environment` - optional value. The environment in which the tests will run.
 
 ### Properties configuration
 Agent recognizes only `agent.properties` file residing in resources root folder. It is currently not possible to configure alternative file location.
@@ -107,10 +107,10 @@ reporting.run.environment=TEST-1
 - `reporting.enabled` - enables or disables reporting. Default value is `false`. If disabled - agent will use no op component implementations that will simply log output for tracing purpose with `trace` level;
 - `reporting.server.hostname` - mandatory if reporting is enabled. Zebrunner server hostname. Can be obtained in Zebrunner on the 'Account & profile' page under 'Service URL' section;
 - `reporting.server.access-token` - mandatory if reporting is enabled. Access token to be used to perform API calls. Can be obtained in Zebrunner on the 'Account & profile' page under 'Token' section;
-- `reporting.project-key` - the project that the test runs belongs to. Default value is `UNKNOWN`. You can manage projects in Zebrunner in the appropriate section.
-- `reporting.run.display-name` - the display name of the test run. Default value is `Default Suite`;
-- `reporting.run.build` - the build number that is associated with the test run. Optional value. It can depict either the test build number, the application build number, or any other useful information;
-- `reporting.run.environment` - the environment in which the tests will run. Optional value. The provided value will be displayed in Zebrunner in the appropriate column.
+- `reporting.project-key` - optional value. The project that the test runs belongs to. Default value is `UNKNOWN`. You can manage projects in Zebrunner in the appropriate section.
+- `reporting.run.display-name` - optional value. The display name of the test run. Default value is `Default Suite`;
+- `reporting.run.build` - optional value. The build number that is associated with the test run. It can depict either the test build number, or the application build number;
+- `reporting.run.environment` - optional value. The environment in which the tests will run.
 
 ## Advanced reporting
 It is possible to configure additional reporting capabilities improving your tracking experience.
