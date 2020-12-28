@@ -1,13 +1,23 @@
 name: docs
 
-on:
-  push:
-    branches:
-      - develop
-    
+on: push
 jobs:
-  deploy:
+  deploy-master:
     runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/master'
+    steps:
+        - uses: actions/checkout@v2
+        - uses: qoqa/action-s3-cp@v1.1
+          env:
+            AWS_S3_BUCKET: 'zebrunner'
+            AWS_ACCESS_KEY_ID: ${{ secrets.DOC_AWS_ACCESS_KEY_ID }}
+            AWS_SECRET_ACCESS_KEY: ${{ secrets.DOCS_AWS_SECRET_ACCESS_KEY }}
+            AWS_REGION: ${{ secrets.DOCS_AWS_REGION }}
+            AWS_S3_PATH: '/_common/docs/agents/testng/README.md'
+            FILE: 'README.md'
+  deploy-develop:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/develop'
     steps:
       - uses: actions/checkout@v2
       - uses: qoqa/action-s3-cp@v1.1

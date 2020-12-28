@@ -11,7 +11,7 @@ Including the agent into your project is easy - just add the dependency to the b
 #### **Gradle**
 ```groovy
 dependencies {
-  testImplementation 'com.zebrunner:agent-testng:1.0.0'
+  testImplementation 'com.zebrunner:agent-testng:1.2.0'
 }
 ```
 
@@ -20,7 +20,7 @@ dependencies {
 <dependency>
   <groupId>com.zebrunner</groupId>
   <artifactId>agent-testng</artifactId>
-  <version>1.0.0</version>
+  <version>1.2.0</version>
   <scope>test</scope>
 </dependency>
 ```
@@ -41,9 +41,10 @@ It is also possible to override configuration parameters by passing them through
 
 Once the configuration is set up, the agent is ready to track your test run events, with no additional configuration required.
 
-### Environment configuration
-The following configuration parameters are recognized by the agent:
+<!-- groups:start -->
 
+### Environment variables
+The following configuration parameters are recognized by the agent:
 - `REPORTING_ENABLED` - enables or disables reporting. The default value is `false`. If disabled, the agent will use no op component implementations that will simply log output for tracing purposes with the `trace` level;
 - `REPORTING_SERVER_HOSTNAME` - mandatory if reporting is enabled. Zebrunner server hostname. Can be obtained in Zebrunner on the 'Account & profile' page under the 'Service URL' section;
 - `REPORTING_SERVER_ACCESS_TOKEN` - mandatory if reporting is enabled. Access token must be used to perform API calls. Can be obtained in Zebrunner on the 'Account & profile' page under the 'Token' section;
@@ -52,9 +53,8 @@ The following configuration parameters are recognized by the agent:
 - `REPORTING_RUN_BUILD` - optional value. The build number that is associated with the test run. It can depict either the test build number, or the application build number;
 - `REPORTING_RUN_ENVIRONMENT` - optional value. The environment in which the tests will run.
 
-### Program arguments configuration
+### Program arguments
 The following configuration parameters are recognized by the agent:
-
 - `reporting.enabled` - enables or disables reporting. The default value is `false`. If disabled, the agent will use no op component implementations that will simply log output for tracing purposes with the `trace` level;
 - `reporting.server.hostname` - mandatory if reporting is enabled. Zebrunner server hostname. Can be obtained in Zebrunner on the 'Account & profile' page under the 'Service URL' section;
 - `reporting.server.accessToken` - mandatory if reporting is enabled. Access token must be used to perform API calls. Can be obtained in Zebrunner on the 'Account & profile' page under the 'Token' section;
@@ -63,11 +63,10 @@ The following configuration parameters are recognized by the agent:
 - `reporting.run.build` - optional value. The build number that is associated with the test run. It can depict either the test build number, or the application build number;
 - `reporting.run.environment` - optional value. The environment in which the tests will run.
 
-### YAML configuration
+### YAML file
 Agent recognizes `agent.yaml` or `agent.yml` file in the resources root folder. It is currently not possible to configure an alternative file location.
 
 Below is a sample configuration file:
-
 ```yaml
 reporting:
   enabled: true
@@ -80,7 +79,6 @@ reporting:
     build: 1.12.1.96-SNAPSHOT
     environment: TEST-1
 ```
-
 - `reporting.enabled` - enables or disables reporting. The default value is `false`. If disabled, the agent will use no op component implementations that will simply log output for tracing purposes with the `trace` level;
 - `reporting.server.hostname` - mandatory if reporting is enabled. Zebrunner server hostname. Can be obtained in Zebrunner on the 'Account & profile' page under the 'Service URL' section;
 - `reporting.server.access-token` - mandatory if reporting is enabled. Access token must be used to perform API calls. Can be obtained in Zebrunner on the 'Account & profile' page under the 'Token' section;
@@ -89,11 +87,10 @@ reporting:
 - `reporting.run.build` - optional value. The build number that is associated with the test run. It can depict either the test build number, or the application build number;
 - `reporting.run.environment` - optional value. The environment in which the tests will run.
 
-### Properties configuration
+### Properties file
 The agent recognizes only `agent.properties` file in the resources root folder. It is currently not possible to configure an alternative file location.
 
 Below is a sample configuration file:
-
 ```properties
 reporting.enabled=true
 reporting.project-key=UNKNOWN
@@ -103,7 +100,6 @@ reporting.run.display-name=Nightly Regression Suite
 reporting.run.build=1.12.1.96-SNAPSHOT
 reporting.run.environment=TEST-1
 ```
-
 - `reporting.enabled` - enables or disables reporting. The default value is `false`. If disabled, the agent will use no op component implementations that will simply log output for tracing purposes with the `trace` level;
 - `reporting.server.hostname` - mandatory if reporting is enabled. Zebrunner server hostname. Can be obtained in Zebrunner on the 'Account & profile' page under the 'Service URL' section;
 - `reporting.server.access-token` - mandatory if reporting is enabled. Access token must be used to perform API calls. Can be obtained in Zebrunner on the 'Account & profile' page under the 'Token' section;
@@ -112,12 +108,289 @@ reporting.run.environment=TEST-1
 - `reporting.run.build` - optional value. The build number that is associated with the test run. It can depict either the test build number, or the application build number;
 - `reporting.run.environment` - optional value. The environment in which the tests will run.
 
+<!-- groups:end -->
+
+## Track Selenium remote driver sessions
+The Zebrunner test agent has a great ability to track tests along with remote driver sessions. After providing additional configuration, the agent captures all events of `RemoteDriverSession` instances (or instances of its subclasses) and reports them in Zebrunner.
+
+### Configuration
+First, it is necessary to add a dependency on `byte-buddy` library with version `1.10.18` or higher to your project. This library is used by the Zebrunner agent to capture events of `RemoteDriverSession`. Your project may already have this dependency either specified in build descriptor or transitively fetched because of another project dependency. In any case, we strongly recommend you to explicitly specify this version of the `byte-buddy` library in build descriptor.
+
+<!-- tabs:start -->
+
+#### **Gradle**
+```groovy
+dependencies {
+    // other project dependencies
+    
+    implementation("net.bytebuddy:byte-buddy:1.10.18")
+
+    // other project dependencies
+}
+```
+
+#### **Maven**
+```xml
+<dependencies>
+    <!-- other project dependencies -->
+
+    <dependency>
+        <groupId>net.bytebuddy</groupId>
+        <artifactId>byte-buddy</artifactId>
+        <version>1.10.18</version>
+    </dependency>
+
+    <!-- other project dependencies -->
+</dependencies>
+```
+
+<!-- tabs:end -->
+
+Then, you need to add a VM argument referencing the core Zebrunner agent jar file. This can be done in several ways: using a build tool (Maven or Gradle) or directly from the IDE.
+
+<!-- groups:start -->
+
+#### Maven dependency plugin
+The `maven-surefire-plugin` provides the ability to add VM arguments in a convenient way. You only need to provide the absolute path to the jar file with the Zebrunner agent.
+
+The `maven-dependency-plugin` can be used to obtain the absolute path to a project's dependency. The `properties` goal of this plugin supplies a set of properties with paths to all project dependencies. If your project is already using the `maven-dependency-plugin`, this is the best way to go.
+
+```xml
+<plugin>
+    <groupId>org.apache.maven.plugins</groupId>
+    <artifactId>maven-dependency-plugin</artifactId>
+    <version>3.1.2</version>
+    <executions>
+        <execution>
+            <goals>
+                <goal>properties</goal>
+            </goals>
+        </execution>
+    </executions>
+</plugin>
+<plugin>
+    <groupId>org.apache.maven.plugins</groupId>
+    <artifactId>maven-surefire-plugin</artifactId>
+    <version>2.22.2</version>
+    <configuration>
+        <argLine>-javaagent:${com.zebrunner:agent-core:jar}</argLine>
+    </configuration>
+</plugin>
+```
+
+The `${com.zebrunner:agent-core:jar}` property is generated by the `maven-dependency-plugin` during the initialization phase. Maven automatically sets the generated value when `maven-surefire-plugin` launches tests.
+
+#### Maven antrun plugin
+The `maven-surefire-plugin` provides the ability to add VM arguments in a convenient way. You only need to provide the absolute path to the jar file with the Zebrunner agent.
+
+The `maven-antrun-plugin` can be used to obtain the absolute path to a project dependency. If your project is already using the `maven-antrun-plugin`, this is the best way to go.
+
+```xml
+<plugin>
+    <groupId>org.apache.maven.plugins</groupId>
+    <artifactId>maven-antrun-plugin</artifactId>
+    <version>1.8</version>
+    <executions>
+        <execution>
+            <phase>initialize</phase>
+            <configuration>
+                <exportAntProperties>true</exportAntProperties>
+                <tasks>
+                    <basename file="${maven.dependency.com.zebrunner.agent-core.jar.path}" property="com.zebrunner:agent-core:jar"/>
+                </tasks>
+            </configuration>
+            <goals>
+                <goal>run</goal>
+            </goals>
+        </execution>
+    </executions>
+</plugin>
+<plugin>
+    <groupId>org.apache.maven.plugins</groupId>
+    <artifactId>maven-surefire-plugin</artifactId>
+    <version>2.22.2</version>
+    <configuration>
+        <argLine>-javaagent:${com.zebrunner:agent-core:jar}</argLine>
+    </configuration>
+</plugin>
+```
+
+The `${com.zebrunner:agent-core:jar}` property is generated by the `maven-antrun-plugin` during the initialization phase. Maven automatically sets the generated value when `maven-surefire-plugin` launches tests.
+
+#### Gradle
+Gradle provides support for adding a VM argument out of the box. The only thing you need to do is add the `jvmArgs` property to the `test` task. Value of this property must point to the local path to the Zebrunner agent.
+
+The following code snippet shows the content of the `build.gradle` file.
+
+```groovy
+def coreAgentArtifact = configurations.testRuntimeClasspath.resolvedConfiguration.resolvedArtifacts.find { it.name == 'agent-core' }
+test.doFirst {
+    jvmArgs "-javaagent:${coreAgentArtifact.file}"
+}
+```
+
+#### IDE
+Most modern IDEs provide the ability to run tests locally along with specifying environment and/or VM arguments. This allows to run tests locally on dev machines and report the results to Zebrunner.
+
+**We strongly recommend not to run tests locally using IDE support along with Zebrunner agent, but instead use the build tool support.**
+
+To add a VM argument to run via the IDE, open the run configuration for tests. Then find the VM arguments setting and append the following line to the property value.
+
+`-javaagent:<path-to-core-agent-jar>`
+
+The value you append to VM arguments setting must contain a valid path to your local agent-core jar file. In most cases, this jar has been downloaded by your IDE and saved in the local repository of your build tool.
+
+With Maven, this path should have the following pattern: `<path-to-user-folder>/.m2/repository/com/zebrunner/agent-core/<agent-core-version>/agent-core-<agent-core-version>.jar`.
+
+With Gradle, this path should have the following pattern: `<path-to-user-folder>/.gradle/caches/modules-2/files-2.1/com.zebrunner/agent-core/<agent-core-version>/agent-core-<agent-core-version>.jar`.
+
+#### IDE with Gradle
+If a test project is imported into IDE as Gradle project, it should be enough to apply normal Gradle configuration for the Zebrunner agent. 
+
+**We strongly recommend not to run tests locally using IDE support along with Zebrunner agent, but instead use the build tool support.**
+
+Just add the following config to the `build.gradle` file.
+
+```groovy
+def coreAgentArtifact = configurations.testRuntimeClasspath.resolvedConfiguration.resolvedArtifacts.find { it.name == 'agent-core' }
+test.doFirst {
+    jvmArgs "-javaagent:${coreAgentArtifact.file}"
+}
+```
+
+#### IDE with Maven
+If a test project is imported into IDE as Maven project, some routine configuration is required to run tests using IDE support.
+
+**We strongly recommend not to run tests locally using IDE support along with Zebrunner agent, but instead use the build tool support.**
+
+The proposed solution is based on approach with dependency plugin, but with additional configuration.
+
+```xml
+
+<plugins>
+    <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <version>3.1.2</version>
+        <executions>
+            <execution>
+                <id>copy</id>
+                <phase>initialize</phase>
+                <goals>
+                    <goal>copy</goal>
+                </goals>
+            </execution>
+        </executions>
+        <configuration>
+            <artifactItems>
+                <artifactItem>
+                    <groupId>com.zebrunner</groupId>
+                    <artifactId>agent-core</artifactId>
+                    <version>${zebrunner-agent.version}</version>
+                    <outputDirectory>${project.build.directory}/agent</outputDirectory>
+                    <destFileName>zebrunner-core-agent.jar</destFileName>
+                </artifactItem>
+            </artifactItems>
+        </configuration>
+    </plugin>
+    <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>3.0.0-M4</version>
+        <configuration>
+            <argLine>-javaagent:${project.build.directory}/agent/zebrunner-core-agent.jar</argLine>
+        </configuration>
+    </plugin>
+</plugins>
+```
+
+The `maven-dependency-plugin` from preceding code snippet copies the jar file with the core Zebrunner agent to the project build directory during initialization phase. The `maven-surefire-plugin` then uses the copied version of the Zebrunner agent as java instrumentation agent.
+
+In some cases, it may not be enough to simply apply such a configuration, but you also need to manually start the initialization phase first.
+
+<!-- groups:end -->
+
+### Session artifacts
+Zebrunner supports 3 types of test session artifacts:
+- Link to VNC
+- Video recording
+- Session log
+- JSON file with metadata
+
+The test agent is not able to capture these artifacts. It is only possible to save a link leading to expected location of artifact. By default, the Zebrunner agent does not save links to the artifacts, but it is easily configurable.
+
+Every type of artifact should be explicitly enabled using a so-called **enabling capability** (see table below). Only the `true` value is considered as trigger to save the link.
+
+| Artifact        | Display name | Enabling capability | Default link                                             | Link overriding capability |
+| --------------- | ------------ | ------------------- | -------------------------------------------------------- | -------------------------- |
+| VNC streaming   |              | enableVnc           | `<provider-integration-host>/ws/vnc/<session-id>`        | vncLink                    |
+| Video recording | Video        | enableVideo         | `artifacts/test-sessions/<session-id>/video.mp4`         | videoLink                  |
+| Session log     | Log          | enableLog           | `artifacts/test-sessions/<session-id>/session.log`       | logLink                    |
+| Metadata JSON   | Metadata     | enableMetadata      | `artifacts/test-sessions/<session-id>/<session-id>.json` | metadataLink               |
+
+The **display name** is the name of the artifact that will be displayed on Zebrunner UI. This value is static and cannot be configured.
+
+The **default link** is the expected location of artifact in S3 (for video, session log, metadata json) or a full link to VNC streaming. The default link can be overridden using the corresponding **link overriding capability**. Both default and overridden links can contain `<session-id>` placeholders. These placeholders will be replaced by the actual session id of the driver session.
+
+VNC is a special type of artifacts. They don't have a name and are not displayed among other artifacts. They are displayed in the video section on Zebrunner UI during session execution and are dropped off on session close. 
+
+Default link to the VNC streaming is based on `provider` capability. Value of this capability will be converted to preconfigured integration from **Test Environment Provider** group. The resolved integration must have a filled in URL property and be enabled in order to save the link to VNC streaming. The `<provider-integration-host>` placeholder of the default link will be replaced by the host of the obtained integration URL. Also, the `http` protocol in the VNC streaming url will be automatically replaced by `ws`, and `https` protocol will be replaced by `wss`. Currently, we only support Selenium, Zebrunner and MCloud integrations.
+
+The following code snippet shows creation of `RemoteWebDriver` with enabled VNC streaming, video recording and session log artifacts, but overrides the link to VNC streaming. The `<session-id>` placeholder of `vncLink` capability will be replaced by the actual session id.
+```java
+import org.openqa.selenium.chrome.ChromeOptions;
+import org.openqa.selenium.remote.RemoteWebDriver;
+
+import java.net.MalformedURLException;
+import java.net.URL;
+
+public class WebDriverManager {
+
+    public RemoteWebDriver initWebDriver() throws MalformedURLException {
+        ChromeOptions capabilities = new ChromeOptions();
+        capabilities.setCapability("enableVnc", "true");
+        capabilities.setCapability("vncLink", "wss://example.com/vnc/<session-id>");
+        capabilities.setCapability("enableVideo", "true");
+        capabilities.setCapability("enableLog", "true");
+
+        return new RemoteWebDriver(new URL("https://user:pass@example.com/wd/hub"), capabilities);
+    }
+
+}
+```
+
+The following code snippet shows creation of `RemoteWebDriver` with enabled video and session log artifacts, overridden link to VNC streaming and session log, but disabled VNC streaming. As a result VNC streaming will not be available, video recording will have default link with populated placeholders, and session log will have custom link with populated `<session-id>` placeholder.
+```java
+import org.openqa.selenium.chrome.ChromeOptions;
+import org.openqa.selenium.remote.RemoteWebDriver;
+
+import java.net.MalformedURLException;
+import java.net.URL;
+
+public class WebDriverManager {
+
+    public RemoteWebDriver initWebDriver() throws MalformedURLException {
+        ChromeOptions capabilities = new ChromeOptions();
+        capabilities.setCapability("enableVnc", "false");
+        capabilities.setCapability("vncLink", "wss://example.com/vnc/<session-id>");
+        capabilities.setCapability("enableVideo", "true");
+        capabilities.setCapability("enableLog", "true");
+        capabilities.setCapability("logLink", "https://example.com/driver-sessions/logs/<session-id>.log");
+
+        return new RemoteWebDriver(new URL("https://user:pass@example.com/wd/hub"), capabilities);
+    }
+
+}
+```
+
 ## Advanced reporting
 It is possible to configure additional reporting capabilities by improving your tracking experience.
 
 ### Collecting test logs
 It is also possible to enable the log collection for your tests. Currently, three logging frameworks are supported out of the box: logback, log4j, log4j2. We recommend using slf4j (Simple Logging Facade for Java) which provides abstraction over logging libraries.
 All you have to do to enable logging is to register the reporting appender in your test framework configuration file.
+
+<!-- groups:start -->
 
 #### Logback
 Add logback (and, optionally, slf4j) dependencies to your build descriptor.
@@ -264,6 +537,8 @@ Add logging appender to `log4j2.xml` file. Feel free to customize the logging pa
 </configuration>
 ```
 
+<!-- groups:end -->
+
 #### Logger usage
 No additional steps are required to collect test logs and track them in Zebrunner.
 ```java
@@ -310,11 +585,17 @@ If `null` is supplied instead of a timestamp, it will be generated automatically
 The uploaded screenshot will appear among test logs. The actual position depends on the provided (or generated) timestamp.
 
 ### Saving artifacts
-In case your tests produce some artifacts, it may be useful to track them in Zebrunner. The agent comes with a few convenient methods for uploading artifacts in Zebrunner and linking them to the currently running test.
+In case your tests or entire test run produce some artifacts, it may be useful to track them in Zebrunner. The agent comes with a few convenient methods for uploading artifacts in Zebrunner and linking them to the currently running test or the test run.
 
-Artifacts can be uploaded using the `Artifact` class. This class has 4 static methods to upload artifacts represented by any Java type associated with the files. Together with an artifact, you must provide the artifact name. This name must contain the file extension that reflects the actual content of the file. If the file extension is incorrect, this file will not be saved in Zebrunner.
+Artifacts can be uploaded using the `Artifact` class. This class has a bunch of static methods to either attach an arbitrary artifact reference or upload artifacts represented by any Java type associated with the files. 
 
-Here is a sample test:
+The `#attachToTestRun(name, file)` and `#attachToTest(name, file)` methods can be used to upload and attach an artifact file to test run and test respectively.
+
+The `#attachReferenceToTestRun(name, reference)` and `#attachReferenceToTest(name, reference)` methods can be used to attach an arbitrary artifact reference to test run and test respectively.
+
+Together with an artifact or artifact reference, you must provide the display name. For the file, this name must contain the file extension that reflects the actual content of the file. If the file extension does not match the file content, this file will not be saved in Zebrunner. Artifact reference can have an arbitrary name.
+
+Here is a sample test that uploads 3 artifacts for test, 1 artifact for test run and attaches 1 artifact reference to test and 1 to test run:
 ```java
 import java.io.InputStream;
 import java.io.File;
@@ -332,44 +613,30 @@ public class AwesomeTests {
         byte[] byteArray;
         File file;
         Path path;
-        Artifact.upload(inputStream, "file.docx");
-        Artifact.upload(byteArray, "image.png");
-        Artifact.upload(file, "application.apk");
-        Artifact.upload(path, "test-log.txt");
+        
+        Artifact.attachToTestRun("file.docx", inputStream);
+        
+        Artifact.attachToTest("image.png", byteArray);
+        Artifact.attachToTest("application.apk", file);
+        Artifact.attachToTest("test-log.txt", path);
+        
+        Artifact.attachReferenceToTestRun("Zebrunner in Github", "https://github.com/zebrunner");
+        
+        Artifact.attachReferenceToTest("zebrunner.com", "https://zebrunner.com/");
         // meaningful assertions
     }
 
 }
 ```
 Artifact upload process is performed in the background, so it will not affect test execution.
-The uploaded artifacts will appear under the test name in the run results in Zebrunner.
-
-It is also allowed to attach links to external artifacts. Any kind of external resources can be used. In order to attach an external artifact, you should use a static method of the `ArtifactReference` class.
-
-Here is an example:
-```java
-import com.zebrunner.agent.core.registrar.ArtifactReference;
-import org.testng.annotations.Test;
-
-public class AwesomeTests {
-
-    @Test
-    public void awesomeTest() {
-        // some code here
-        ArtifactReference.attach("Zebrunner", "https://zebrunner.com/");
-        // meaningful assertions
-    }
-
-}
-```
-The example above adds a link to zebrunner.com to the list of test artifacts.
+The uploaded artifacts will appear under the test or test run name in the run results in Zebrunner.
 
 ### Attaching labels
-In some cases, it may be useful to attach some meta information related to a test - its Jira id, its priority, or any other useful data.
+In some cases, it may be useful to attach meta information related to a test - its Jira id, its priority, or any other useful data.
 
 The agent comes with a concept of a label. Label is a key-value pair associated with a test. The key is represented by a `String`, the label value accepts a vararg of `Strings`. 
 
-There is a bunch of annotations that can be used to attach a label to a test. All the annotations can be used on both class and method levels. It is also possible to override a class-level label on a method-level. There is one generic annotation and a few bespoke ones that don't require a label name:
+There is a bunch of annotations that can be used to attach a label to a test. All the annotations can be used on both class and method levels. It is also possible to override a class-level label on a method-level. There is one generic annotation, and a few bespoke ones that don't require a label name:
 - `@Priority`
 - `@JiraReference`
 - `@TestLabel` - the generic one.
@@ -398,7 +665,7 @@ public class AwesomeTests {
 
 }
 ```
-The test from the sample above attaches 5 labels: 1 priority, 1 jira-reference, 2 app, 1 Chrome label.
+The test from the sample above attaches 5 labels: 1 priority, 1 jira-reference, 2 'app' labels, 1 'Chrome' label.
 
 The values of attached labels will be displayed in Zebrunner under the name of a corresponding test. The values of the `@JiraReference` annotation will be displayed in blue pills to the right of the test name.
 
@@ -434,6 +701,33 @@ public class AwesomeTests {
 In the example above, `kenobi` will be reported as a maintainer of `anotherAwesomeTest` (class-level value taken into account), while `skywalker` will be reported as a maintainer of test `awesomeTest`.
 
 The maintainer username should be a valid Zebrunner username, otherwise it will be set to `anonymous`.
+
+### Reverting test registration
+In some cases it might be handy not to register test execution in Zebrunner. This might caused by very special circumstances of test environment or execution conditions.
+
+Zebrunner agent comes with a convenient method `#revertRegistration()` from `CurrentTest` class for managing test registration at runtime. The following code snippet shows a case where test is not reported on Monday.
+```java
+import com.zebrunner.agent.core.registrar.CurrentTest;
+import org.testng.annotations.Test;
+
+import java.time.DayOfWeek;
+import java.time.LocalDate;
+
+public class AwesomeTests {
+
+    @Test
+    public void awesomeTest() {
+        // some code here  
+        if (LocalDate.now().getDayOfWeek() == DayOfWeek.MONDAY) {
+            CurrentTest.revertRegistration();
+        }
+        // meaningful assertions
+    }
+
+}
+```
+
+It is worth mentioning that the method invocation does not affect the test execution, but simply unregisters the test in Zebrunner. To interrupt the test execution, you need to do additional actions, for example, throw a `SkipException`.
 
 ## Contribution
 To check out the project and build from the source, do the following:
