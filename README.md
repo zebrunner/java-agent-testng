@@ -36,7 +36,7 @@ It is currently possible to provide the configuration via:
 3. YAML file
 4. Properties file
 
-The configuration lookup will be performed in the order listed above, meaning the environment configuration will always take precedence over YAML and so on.
+The configuration lookup will be performed in the order listed above, meaning that environment configuration will always take precedence over YAML and so on.
 It is also possible to override configuration parameters by passing them through a configuration provider with higher precedence.
 
 Once the configuration is set up, the agent is ready to track your test run events, with no additional configuration required.
@@ -111,7 +111,7 @@ reporting.run.environment=TEST-1
 <!-- groups:end -->
 
 ## Track Selenium remote driver sessions
-The Zebrunner test agent has a great ability to track tests along with remote driver sessions. After providing additional configuration, the agent captures all events of `RemoteDriverSession` instances (or instances of its subclasses) and reports them in Zebrunner.
+The Zebrunner test agent has a great ability to track tests along with remote driver sessions. After providing additional configuration, the agent captures all events of `RemoteDriverSession` instances (or instances of its subclasses) and reports them to Zebrunner.
 
 ### Configuration
 First, it is necessary to add a dependency on `byte-buddy` library with version `1.10.18` or higher to your project. This library is used by the Zebrunner agent to capture events of `RemoteDriverSession`. Your project may already have this dependency either specified in build descriptor or transitively fetched because of another project dependency. In any case, we strongly recommend you to explicitly specify this version of the `byte-buddy` library in build descriptor.
@@ -387,7 +387,7 @@ public class WebDriverManager {
 It is possible to configure additional reporting capabilities by improving your tracking experience.
 
 ### Collecting test logs
-It is also possible to enable the log collection for your tests. Currently, three logging frameworks are supported out of the box: logback, log4j, log4j2. We recommend using slf4j (Simple Logging Facade for Java) which provides abstraction over logging libraries.
+It is also possible to enable the log collection for your tests. Currently, three logging frameworks are supported out of the box: **logback**, **log4j**, **log4j2**. We recommend using slf4j (Simple Logging Facade for Java) which provides abstraction over logging libraries.
 All you have to do to enable logging is to register the reporting appender in your test framework configuration file.
 
 <!-- groups:start -->
