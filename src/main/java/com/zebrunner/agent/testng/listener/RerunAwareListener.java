@@ -36,7 +36,7 @@ public class RerunAwareListener implements RerunListener, IMethodInterceptor {
      * @return collection of test execution contexts
      */
     private List<TestInvocationContext> getInvocationContexts(List<TestDTO> testDTOs) {
-        return testDTOs.stream().map(test -> TestInvocationContext.fromJsonString(test.getUuid()))
+        return testDTOs.stream().map(test -> TestInvocationContext.fromJsonString(test.getCorrelationData()))
                        .collect(Collectors.toList());
     }
 
