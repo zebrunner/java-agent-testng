@@ -45,18 +45,22 @@ public class RetryService {
     }
 
     public static String buildRetryAnalyzerClassKey(ITestResult result) {
-        String pattern = "retry-analyzer-class-%s.%s(%s)[%d][%d]";
-        ConstructorOrMethod constructorOrMethod = result.getMethod().getConstructorOrMethod();
+        ITestNGMethod method = result.getMethod();
+        ITestContext testContext = result.getTestContext();
+        Object[] parameters = result.getParameters();
 
-        String className = result.getMethod().getTestClass().getName();
+        String pattern = "retry-analyzer-class-%s.%s(%s)[%d][%d]";
+        ConstructorOrMethod constructorOrMethod = method.getConstructorOrMethod();
+
+        String className = method.getTestClass().getName();
         String methodName = constructorOrMethod.getName();
         String argumentTypes = Arrays.stream(constructorOrMethod.getParameterTypes())
                                      .map(Class::getName)
                                      .collect(Collectors.joining(","));
-        int instanceIndex = FactoryInstanceHolder.getInstanceIndex(result.getMethod());
-        int parameterIndex = RunContextService.getDataProviderCurrentIndex(result.getMethod(), result.getTestContext());
+        int instanceIndex = FactoryInstanceHolder.getInstanceIndex(method);
+        int dataProviderIndex = RunContextService.getCurrentDataProviderIndex(method, testContext, parameters);
 
-        return String.format(pattern, className, methodName, argumentTypes, instanceIndex, parameterIndex);
+        return String.format(pattern, className, methodName, argumentTypes, instanceIndex, dataProviderIndex);
     }
 
     public static Map<Integer, String> getRetryFailureReasons(ITestNGMethod method, ITestContext context) {
