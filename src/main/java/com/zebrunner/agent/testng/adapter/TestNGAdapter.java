@@ -25,6 +25,8 @@ import org.testng.annotations.Test;
 import org.testng.internal.thread.ThreadUtil;
 import org.testng.xml.XmlSuite;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Method;
 import java.time.Instant;
@@ -179,12 +181,9 @@ public class TestNGAdapter {
 
             long endedAtMillis = testResult.getEndMillis();
             OffsetDateTime endedAt = ofMillis(endedAtMillis);
+            String errorMessage = getErrorMessage(testResult);
 
-            String message = wasRetry(testResult.getMethod(), testResult.getTestContext())
-                    ? collectRetryMessages(testResult.getMethod(), testResult.getTestContext())
-                    : testResult.getThrowable().getMessage();
-
-            TestFinishDescriptor result = new TestFinishDescriptor(Status.FAILED, endedAt, message);
+            TestFinishDescriptor result = new TestFinishDescriptor(Status.FAILED, endedAt, errorMessage);
             registrar.registerTestFinish(id, result);
         } else {
             log.debug("TestNGAdapter -> registerFailedTestFinish: retry is NOT finished");
@@ -195,23 +194,46 @@ public class TestNGAdapter {
         if (isRetryFinished(testResult.getMethod(), testResult.getTestContext())) {
             log.debug("TestNGAdapter -> registerSkippedTestFinish: retry is finished");
 
-            long endedAtMillis = testResult.getEndMillis();
-            OffsetDateTime endedAt = ofMillis(endedAtMillis);
-
             TestInvocationContext testContext = buildTestInvocationContext(testResult);
-
-            String message;
-            if (wasRetry(testResult.getMethod(), testResult.getTestContext())) {
-                message = collectRetryMessages(testResult.getMethod(), testResult.getTestContext());
-            } else {
-                message = testResult.getThrowable().getMessage();
-            }
-
-            TestFinishDescriptor result = new TestFinishDescriptor(Status.SKIPPED, endedAt, message);
             String id = generateTestId(testContext);
+
+            OffsetDateTime endedAt = ofMillis(testResult.getEndMillis());
+            String errorMessage = getErrorMessage(testResult);
+
+            TestFinishDescriptor result = new TestFinishDescriptor(Status.SKIPPED, endedAt, errorMessage);
             registrar.registerTestFinish(id, result);
         } else {
             log.debug("TestNGAdapter -> registerSkippedTestFinish: retry is NOT finished");
+        }
+    }
+
+    private String getErrorMessage(ITestResult testResult) {
+        return wasRetry(testResult.getMethod(), testResult.getTestContext())
+                ? collectRetryMessages(testResult.getMethod(), testResult.getTestContext())
+                : getPrintedStackTrace(testResult.getThrowable());
+    }
+
+    private String collectRetryMessages(ITestNGMethod method, ITestContext context) {
+        StringBuilder message = new StringBuilder();
+        if (wasRetry(method, context)) {
+            Map<Integer, String> failureReasons = RetryService.getRetryFailureReasons(method, context);
+
+            failureReasons.forEach((index, msg) -> message.append("Retry index is ")
+                                                          .append(index)
+                                                          .append("\n")
+                                                          .append(msg)
+                                                          .append("\n"));
+        }
+        return message.toString();
+    }
+
+    private String getPrintedStackTrace(Throwable throwable) {
+        if (throwable != null) {
+            StringWriter errorMessageStringWriter = new StringWriter();
+            throwable.printStackTrace(new PrintWriter(errorMessageStringWriter));
+            return errorMessageStringWriter.toString();
+        } else {
+            return "";
         }
     }
 
@@ -261,20 +283,6 @@ public class TestNGAdapter {
 
     private boolean wasRetry(ITestNGMethod method, ITestContext context) {
         return !RetryService.getRetryFailureReasons(method, context).isEmpty();
-    }
-
-    private String collectRetryMessages(ITestNGMethod method, ITestContext context) {
-        StringBuilder message = new StringBuilder();
-        if (wasRetry(method, context)) {
-            Map<Integer, String> failureReasons = RetryService.getRetryFailureReasons(method, context);
-
-            failureReasons.forEach((index, msg) -> message.append("Retry index is ")
-                                                          .append(index)
-                                                          .append("\n")
-                                                          .append(msg)
-                                                          .append("\n"));
-        }
-        return message.toString();
     }
 
     private String generateTestId(TestInvocationContext testInvocationContext) {

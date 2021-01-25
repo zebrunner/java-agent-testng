@@ -7,6 +7,8 @@ import org.testng.ITestNGMethod;
 import org.testng.ITestResult;
 import org.testng.internal.InstanceCreator;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -30,12 +32,23 @@ public class RetryAnalyzerInterceptor implements IRetryAnalyzer {
         if (needRetry) {
             RetryService.setRetryStarted(method, context);
 
-            String message = result.getThrowable().getMessage();
+            String message = getPrintedStackTrace(result.getThrowable());
+
             RetryService.setRetryFailureReason(getRetryIndex(result), message, method, context);
         } else {
             RetryService.setRetryFinished(method, context);
         }
         return needRetry;
+    }
+
+    private String getPrintedStackTrace(Throwable throwable) {
+        if (throwable != null) {
+            StringWriter errorMessageStringWriter = new StringWriter();
+            throwable.printStackTrace(new PrintWriter(errorMessageStringWriter));
+            return errorMessageStringWriter.toString();
+        } else {
+            return "";
+        }
     }
 
     private IRetryAnalyzer getOriginalRetryAnalyzer(ITestResult result) {
