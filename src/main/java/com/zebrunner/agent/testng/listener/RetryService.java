@@ -49,9 +49,10 @@ public class RetryService {
         ITestContext testContext = result.getTestContext();
         Object[] parameters = result.getParameters();
 
-        String pattern = "retry-analyzer-class-%s.%s(%s)[%d][%d]";
+        String pattern = "[%s]-retry-analyzer-class-%s.%s(%s)[%d][%d]";
         ConstructorOrMethod constructorOrMethod = method.getConstructorOrMethod();
 
+        String thread = Thread.currentThread().getName();
         String className = method.getTestClass().getName();
         String methodName = constructorOrMethod.getName();
         String argumentTypes = Arrays.stream(constructorOrMethod.getParameterTypes())
@@ -60,7 +61,7 @@ public class RetryService {
         int instanceIndex = FactoryInstanceHolder.getInstanceIndex(method);
         int dataProviderIndex = RunContextService.getCurrentDataProviderIndex(method, testContext, parameters);
 
-        return String.format(pattern, className, methodName, argumentTypes, instanceIndex, dataProviderIndex);
+        return String.format(pattern, thread, className, methodName, argumentTypes, instanceIndex, dataProviderIndex);
     }
 
     public static Map<Integer, String> getRetryFailureReasons(ITestNGMethod method, ITestContext context) {

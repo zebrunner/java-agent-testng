@@ -19,8 +19,8 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class RetryAnalyzerInterceptor implements IRetryAnalyzer {
 
-    private final Map<String, AtomicInteger> retryAnalyzerKeyToRetryIndex = new ConcurrentHashMap<>();
-    private final Map<String, IRetryAnalyzer> retryAnalyzerKeyToIdentity = new ConcurrentHashMap<>();
+    private static final Map<String, AtomicInteger> RETRY_ANALYZER_KEY_TO_RETRY_INDEX = new ConcurrentHashMap<>();
+    private static final Map<String, IRetryAnalyzer> RETRY_ANALYZER_KEY_TO_IDENTITY = new ConcurrentHashMap<>();
 
     @Override
     public boolean retry(ITestResult result) {
@@ -52,7 +52,7 @@ public class RetryAnalyzerInterceptor implements IRetryAnalyzer {
     }
 
     private IRetryAnalyzer getOriginalRetryAnalyzer(ITestResult result) {
-        return retryAnalyzerKeyToIdentity.computeIfAbsent(
+        return RETRY_ANALYZER_KEY_TO_IDENTITY.computeIfAbsent(
                 RetryService.buildRetryAnalyzerClassKey(result),
                 $ -> RetryService.getRetryAnalyzerClass(result.getTestContext(), result.getMethod())
                                  .map(InstanceCreator::newInstance)
@@ -61,7 +61,7 @@ public class RetryAnalyzerInterceptor implements IRetryAnalyzer {
     }
 
     private int getRetryIndex(ITestResult result) {
-        return retryAnalyzerKeyToRetryIndex.computeIfAbsent(
+        return RETRY_ANALYZER_KEY_TO_RETRY_INDEX.computeIfAbsent(
                 RetryService.buildRetryAnalyzerClassKey(result),
                 $ -> new AtomicInteger(0)
         ).incrementAndGet();
