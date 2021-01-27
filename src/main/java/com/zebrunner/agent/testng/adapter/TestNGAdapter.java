@@ -95,20 +95,22 @@ public class TestNGAdapter {
     }
 
     public void registerHeadlessTestStart(ITestResult testResult) {
-        ITestNGMethod nextInvokedTest = getNextInvokedTest(testResult);
+        if (!registrar.isTestStarted()) { // we should not register the same headless test twice
+            ITestNGMethod nextInvokedTest = getNextInvokedTest(testResult);
 
-        if (isRetryFinished(nextInvokedTest, testResult.getTestContext())) {
-            log.debug("TestNGAdapter -> registerHeadlessTestStart: retry is finished");
+            if (isRetryFinished(nextInvokedTest, testResult.getTestContext())) {
+                log.debug("TestNGAdapter -> registerHeadlessTestStart: retry is finished");
 
-            TestInvocationContext testContext = buildTestInvocationContext(testResult);
-            TestStartDescriptor testStartDescriptor = buildTestStartDescriptor(null, testResult);
+                TestInvocationContext testContext = buildTestInvocationContext(testResult);
+                TestStartDescriptor testStartDescriptor = buildTestStartDescriptor(null, testResult);
 
-            setZebrunnerTestIdOnRerun(testResult, nextInvokedTest, testStartDescriptor);
+                setZebrunnerTestIdOnRerun(testResult, nextInvokedTest, testStartDescriptor);
 
-            String id = generateTestId(testContext);
-            registrar.registerHeadlessTestStart(id, testStartDescriptor);
-        } else {
-            log.debug("TestNGAdapter -> registerHeadlessTestStart: retry is NOT finished");
+                String id = generateTestId(testContext);
+                registrar.registerHeadlessTestStart(id, testStartDescriptor);
+            } else {
+                log.debug("TestNGAdapter -> registerHeadlessTestStart: retry is NOT finished");
+            }
         }
     }
 
