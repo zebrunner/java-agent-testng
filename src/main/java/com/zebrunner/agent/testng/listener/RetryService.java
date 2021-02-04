@@ -64,26 +64,6 @@ public class RetryService {
         return String.format(pattern, thread, className, methodName, argumentTypes, instanceIndex, dataProviderIndex);
     }
 
-    public static Map<Integer, String> getRetryFailureReasons(ITestNGMethod method, ITestContext context) {
-        return getRetryContext(context)
-                .map(RetryContext::getRetryItemContexts)
-                .map(retryItemContext -> retryItemContext.get(method.getParameterInvocationCount()))
-                .map(RetryItemContext::getRetryFailedReasons)
-                .orElseGet(ConcurrentHashMap::new);
-    }
-
-    public static void setRetryFailureReason(int retryIndex, String failureReason, ITestNGMethod method, ITestContext context) {
-        RetryItemContext retryItemContext = getOrInitRetryItemContext(method, context);
-
-        Map<Integer, String> failureReasons = retryItemContext.getRetryFailedReasons();
-        if (failureReasons == null) {
-            failureReasons = new ConcurrentHashMap<>();
-        }
-
-        failureReasons.put(retryIndex, failureReason);
-        retryItemContext.setRetryFailedReasons(failureReasons);
-    }
-
     public static void setRetryStarted(ITestNGMethod method, ITestContext context) {
         getOrInitRetryItemContext(method, context)
                 .setStarted();
