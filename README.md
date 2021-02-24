@@ -668,7 +668,7 @@ Test agent itself does not capture those artifacts since it has no control over 
 | --------------- | ------------ | ------------------- | -------------------------------------------------- | ------------------------------- |
 | Video recording | Video        | enableVideo         | `artifacts/test-sessions/<session-id>/video.mp4`   | videoLink                       |
 | Session log     | Log          | enableLog           | `artifacts/test-sessions/<session-id>/session.log` | logLink                         |
-| VNC streaming   |              | enableVnc           | `<provider-integration-host>/ws/vnc/<session-id>`  | vncLink                         |
+| VNC streaming   |              | enableVNC           | `<provider-integration-host>/ws/vnc/<session-id>`  | vncLink                         |
 
 The **display name** is the name of the artifact that will be displayed on Zebrunner UI. This value is predefined and unfortunately can not be changed at the moment.
 
@@ -692,7 +692,7 @@ public class WebDriverManager {
 
     public RemoteWebDriver initWebDriver() throws MalformedURLException {
         ChromeOptions capabilities = new ChromeOptions();
-        capabilities.setCapability("enableVnc", "true");
+        capabilities.setCapability("enableVNC", "true");
         capabilities.setCapability("vncLink", "wss://example.com/vnc/<session-id>");
         capabilities.setCapability("enableVideo", "true");
         capabilities.setCapability("enableLog", "true");
@@ -715,7 +715,7 @@ public class WebDriverManager {
 
     public RemoteWebDriver initWebDriver() throws MalformedURLException {
         ChromeOptions capabilities = new ChromeOptions();
-        capabilities.setCapability("enableVnc", "false");
+        capabilities.setCapability("enableVNC", "false");
         capabilities.setCapability("vncLink", "wss://example.com/vnc/<session-id>");
         capabilities.setCapability("enableVideo", "true");
         capabilities.setCapability("enableLog", "true");
