@@ -11,7 +11,7 @@ Including the agent into your project is easy - just add the dependency to the b
 #### **Gradle**
 ```groovy
 dependencies {
-  testImplementation 'com.zebrunner:agent-testng:1.2.1'
+  testImplementation 'com.zebrunner:agent-testng:1.3.0'
 }
 ```
 
@@ -20,7 +20,7 @@ dependencies {
 <dependency>
   <groupId>com.zebrunner</groupId>
   <artifactId>agent-testng</artifactId>
-  <version>1.2.1</version>
+  <version>1.3.0</version>
   <scope>test</scope>
 </dependency>
 ```
