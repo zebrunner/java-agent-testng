@@ -8,51 +8,47 @@ import org.testng.IDataProviderMethod;
 import org.testng.ITestContext;
 import org.testng.ITestNGMethod;
 
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Set;
 
 public class DataProviderInterceptor implements IDataProviderInterceptor {
 
     @Override
-    public Iterator<Object[]> intercept(Iterator<Object[]> original, IDataProviderMethod dataProviderMethod, ITestNGMethod method, ITestContext context) {
-        Iterator<Object[]> result;
-        if (RerunContextHolder.isRerun()) {
-            Set<Integer> indices = RunContextService.getDataProviderIndicesForRerun(method, context);
-            boolean forced = RunContextService.isForceRerun(method, context);
-            boolean filterIndices = !indices.isEmpty() && !forced;
-
-            result = filterIndices ? filterDataProviderIndices(original, indices) : original;
+    public Iterator<Object[]> intercept(Iterator<Object[]> original,
+                                        IDataProviderMethod dataProviderMethod,
+                                        ITestNGMethod method,
+                                        ITestContext context) {
+        // there is an issue with TestNG that in some cases
+        // a IDataProviderInterceptor instance can be registered and invoked two or more tiles in a row.
+        // in order to not perform filtration many times, we check type of the original iterator here
+        if (original instanceof TrackableIterator) {
+            return original;
         } else {
-            result = original;
-        }
-        List<Object[]> resultAsList = Lists.newArrayList(result);
-        RunContextService.setDataProviderSize(method, context, resultAsList.size());
+            List<Object[]> dataProviderData = Lists.newArrayList(original);
+            RunContextService.setDataProviderData(method, context, dataProviderData);
 
-        return new TrackableIterator(resultAsList.iterator(), method, context);
+            if (RerunContextHolder.isRerun()) {
+                List<Integer> indicesForRerun = RunContextService.getDataProviderIndicesForRerun(method, context);
+                if (!indicesForRerun.isEmpty()) {
+                    dataProviderData = filterDataProviderData(dataProviderData, indicesForRerun);
+                }
+            }
+
+            return new TrackableIterator(dataProviderData.iterator(), method, context);
+        }
     }
 
-    private Iterator<Object[]> filterDataProviderIndices(Iterator<Object[]> original, Set<Integer> rerunIndices) {
-        return new Iterator<Object[]>() {
+    private static List<Object[]> filterDataProviderData(List<Object[]> dataProviderData, List<Integer> indicesForRerun) {
+        List<Object[]> filteredData = new ArrayList<>();
 
-            private int index = 0;
-
-            @Override
-            public boolean hasNext() {
-                return original.hasNext() && rerunIndices.contains(index);
+        for (Integer index : indicesForRerun) {
+            if (index < dataProviderData.size()) {
+                filteredData.add(dataProviderData.get(index));
             }
+        }
 
-            @Override
-            public Object[] next() {
-                Object[] result = null;
-                if (rerunIndices.contains(index)) {
-                    result = original.next();
-                    index++;
-                }
-                return result;
-            }
-
-        };
+        return filteredData;
     }
 
     @RequiredArgsConstructor
@@ -61,7 +57,7 @@ public class DataProviderInterceptor implements IDataProviderInterceptor {
         private final Iterator<Object[]> originalIterator;
         private final ITestNGMethod method;
         private final ITestContext context;
-        private int parameterIndex = 0;
+        private int index = 0;
 
         @Override
         public boolean hasNext() {
@@ -70,7 +66,24 @@ public class DataProviderInterceptor implements IDataProviderInterceptor {
 
         @Override
         public Object[] next() {
-            RunContextService.setDataProviderCurrentIndex(method, context, parameterIndex++);
+            // there is a very subtle trait of testng that lead to this check before setting current data provider index.
+            //
+            // when tests run sequentially, the same thread is used to iterate through the data provider data and to execute the test.
+            // in such cases we don't have any difficulties in figuring out what is the current line of the data provider.
+            //
+            // when tests run in parallel, testng load data provider data within one thread (basically in main)
+            // but the tests are executed another pooled threads.
+            // because of this we have to use another approach then for sequential run.
+            // for more information check the com.zebrunner.agent.testng.core.TestMethodContext.getCurrentDataProviderIndex
+            //
+            // if any of the tests fails when they run in parallel and there is a IRetryAnalyzer for the test,
+            // then testng loads data provider again and refreshes the line for the failed test.
+            // this is performed by iterating through the iterator.
+            // from the agent implementation standpoint,
+            // this is a false-positive invocation of the setCurrentDataProviderIteratorIndex method.
+            if (RetryService.isRetryFinished(method, context)) {
+                RunContextService.setCurrentDataProviderIteratorIndex(method, context, index++);
+            }
             return originalIterator.next();
         }
 

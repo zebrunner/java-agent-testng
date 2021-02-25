@@ -3,9 +3,8 @@ package com.zebrunner.agent.testng.core;
 import com.google.gson.Gson;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Getter;
+import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -13,8 +12,7 @@ import java.util.List;
 /**
  * Stores context of specific test method invocation (e.g. invocation N of test method with invocation count X where N is less or equal than X)
  */
-@Getter
-@Setter
+@Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
@@ -31,26 +29,8 @@ public class TestInvocationContext {
     private List<String> parameterClassNames;
     private int dataProviderIndex;
     private int instanceIndex;
+    // not sure that the invocationIndex is really necessary
     private int invocationIndex;
-
-    @Override
-    public int hashCode() {
-        return (className + methodName + parameterClassNames + instanceIndex).hashCode();
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-
-        if (!(o instanceof TestInvocationContext)) {
-            return false;
-        }
-
-        TestInvocationContext test = (TestInvocationContext) o;
-        return hashCode() == test.hashCode();
-    }
 
     @Override
     public String toString() {

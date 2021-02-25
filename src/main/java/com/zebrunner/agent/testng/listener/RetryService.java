@@ -45,38 +45,23 @@ public class RetryService {
     }
 
     public static String buildRetryAnalyzerClassKey(ITestResult result) {
-        String pattern = "retry-analyzer-class-%s.%s(%s)[%d][%d]";
-        ConstructorOrMethod constructorOrMethod = result.getMethod().getConstructorOrMethod();
+        ITestNGMethod method = result.getMethod();
+        ITestContext testContext = result.getTestContext();
+        Object[] parameters = result.getParameters();
 
-        String className = result.getMethod().getTestClass().getName();
+        String pattern = "[%s]-retry-analyzer-class-%s.%s(%s)[%d][%d]";
+        ConstructorOrMethod constructorOrMethod = method.getConstructorOrMethod();
+
+        String thread = Thread.currentThread().getName();
+        String className = method.getTestClass().getName();
         String methodName = constructorOrMethod.getName();
         String argumentTypes = Arrays.stream(constructorOrMethod.getParameterTypes())
                                      .map(Class::getName)
                                      .collect(Collectors.joining(","));
-        int instanceIndex = FactoryInstanceHolder.getInstanceIndex(result.getMethod());
-        int parameterIndex = RunContextService.getDataProviderCurrentIndex(result.getMethod(), result.getTestContext());
+        int instanceIndex = FactoryInstanceHolder.getInstanceIndex(method);
+        int dataProviderIndex = RunContextService.getCurrentDataProviderIndex(method, testContext, parameters);
 
-        return String.format(pattern, className, methodName, argumentTypes, instanceIndex, parameterIndex);
-    }
-
-    public static Map<Integer, String> getRetryFailureReasons(ITestNGMethod method, ITestContext context) {
-        return getRetryContext(context)
-                .map(RetryContext::getRetryItemContexts)
-                .map(retryItemContext -> retryItemContext.get(method.getParameterInvocationCount()))
-                .map(RetryItemContext::getRetryFailedReasons)
-                .orElseGet(ConcurrentHashMap::new);
-    }
-
-    public static void setRetryFailureReason(int retryIndex, String failureReason, ITestNGMethod method, ITestContext context) {
-        RetryItemContext retryItemContext = getOrInitRetryItemContext(method, context);
-
-        Map<Integer, String> failureReasons = retryItemContext.getRetryFailedReasons();
-        if (failureReasons == null) {
-            failureReasons = new ConcurrentHashMap<>();
-        }
-
-        failureReasons.put(retryIndex, failureReason);
-        retryItemContext.setRetryFailedReasons(failureReasons);
+        return String.format(pattern, thread, className, methodName, argumentTypes, instanceIndex, dataProviderIndex);
     }
 
     public static void setRetryStarted(ITestNGMethod method, ITestContext context) {

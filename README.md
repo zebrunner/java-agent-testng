@@ -11,7 +11,7 @@ Including the agent into your project is easy - just add the dependency to the b
 #### **Gradle**
 ```groovy
 dependencies {
-  testImplementation 'com.zebrunner:agent-testng:1.2.0'
+  testImplementation 'com.zebrunner:agent-testng:1.3.0'
 }
 ```
 
@@ -20,7 +20,7 @@ dependencies {
 <dependency>
   <groupId>com.zebrunner</groupId>
   <artifactId>agent-testng</artifactId>
-  <version>1.2.0</version>
+  <version>1.3.0</version>
   <scope>test</scope>
 </dependency>
 ```
@@ -527,7 +527,7 @@ The `maven-dependency-plugin` can be used to obtain the absolute path to a proje
 <plugin>
     <groupId>org.apache.maven.plugins</groupId>
     <artifactId>maven-surefire-plugin</artifactId>
-    <version>2.22.2</version>
+    <version>3.0.0-M4</version>
     <configuration>
         <argLine>-javaagent:${com.zebrunner:agent-core:jar}</argLine>
     </configuration>
@@ -564,7 +564,7 @@ The `maven-antrun-plugin` can be used to obtain the absolute path to a project d
 <plugin>
     <groupId>org.apache.maven.plugins</groupId>
     <artifactId>maven-surefire-plugin</artifactId>
-    <version>2.22.2</version>
+    <version>3.0.0-M4</version>
     <configuration>
         <argLine>-javaagent:${com.zebrunner:agent-core:jar}</argLine>
     </configuration>
@@ -630,7 +630,7 @@ The proposed solution is based on an approach with dependency plugin, but with a
                 <artifactItem>
                     <groupId>com.zebrunner</groupId>
                     <artifactId>agent-core</artifactId>
-                    <version>LATEST</version>
+                    <version>RELEASE</version>
                     <outputDirectory>${project.build.directory}/agent</outputDirectory>
                     <destFileName>zebrunner-core-agent.jar</destFileName>
                 </artifactItem>
@@ -657,20 +657,18 @@ In some cases, it may not be enough to simply apply such a configuration, but yo
 Once the configuration is in place the agent will automatically report to Zebrunner web driver session events. However, it is also possible to collect additional test session artifacts in order to improve overall reporting experience.
 
 ### Session artifacts
-Zebrunner supports 4 types of test session artifacts:
+Zebrunner supports 3 types of test session artifacts:
 - Video recording
 - Session log
-- JSON file with metadata
 - VNC streaming
 
 Test agent itself does not capture those artifacts since it has no control over underlying Selenium Hub or MCloud implementation, however, it is possible to attach appropriate artifact references by providing specially designed set of driver session capabilities (**enabling capabilities**) - see the table below for more details. Only the `true` value for those is considered as trigger to save the link.
 
-| Artifact        | Display name | Enabling capability | Default reference                                        | Reference overriding capability |
-| --------------- | ------------ | ------------------- | -------------------------------------------------------- | ------------------------------- |
-| Video recording | Video        | enableVideo         | `artifacts/test-sessions/<session-id>/video.mp4`         | videoLink                       |
-| Session log     | Log          | enableLog           | `artifacts/test-sessions/<session-id>/session.log`       | logLink                         |
-| Metadata JSON   | Metadata     | enableMetadata      | `artifacts/test-sessions/<session-id>/<session-id>.json` | metadataLink                    |
-| VNC streaming   |              | enableVnc           | `<provider-integration-host>/ws/vnc/<session-id>`        | vncLink                         |
+| Artifact        | Display name | Enabling capability | Default reference                                  | Reference overriding capability |
+| --------------- | ------------ | ------------------- | -------------------------------------------------- | ------------------------------- |
+| Video recording | Video        | enableVideo         | `artifacts/test-sessions/<session-id>/video.mp4`   | videoLink                       |
+| Session log     | Log          | enableLog           | `artifacts/test-sessions/<session-id>/session.log` | logLink                         |
+| VNC streaming   |              | enableVNC           | `<provider-integration-host>/ws/vnc/<session-id>`  | vncLink                         |
 
 The **display name** is the name of the artifact that will be displayed on Zebrunner UI. This value is predefined and unfortunately can not be changed at the moment.
 
@@ -694,7 +692,7 @@ public class WebDriverManager {
 
     public RemoteWebDriver initWebDriver() throws MalformedURLException {
         ChromeOptions capabilities = new ChromeOptions();
-        capabilities.setCapability("enableVnc", "true");
+        capabilities.setCapability("enableVNC", "true");
         capabilities.setCapability("vncLink", "wss://example.com/vnc/<session-id>");
         capabilities.setCapability("enableVideo", "true");
         capabilities.setCapability("enableLog", "true");
@@ -717,7 +715,7 @@ public class WebDriverManager {
 
     public RemoteWebDriver initWebDriver() throws MalformedURLException {
         ChromeOptions capabilities = new ChromeOptions();
-        capabilities.setCapability("enableVnc", "false");
+        capabilities.setCapability("enableVNC", "false");
         capabilities.setCapability("vncLink", "wss://example.com/vnc/<session-id>");
         capabilities.setCapability("enableVideo", "true");
         capabilities.setCapability("enableLog", "true");
