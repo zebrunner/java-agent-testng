@@ -12,11 +12,11 @@ import org.testng.IRetryAnalyzer;
 import org.testng.ITestContext;
 import org.testng.ITestNGMethod;
 import org.testng.TestRunner;
-import org.testng.internal.annotations.DisabledRetryAnalyzer;
 
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -25,19 +25,23 @@ public class RerunAwareListener implements RerunListener, IMethodInterceptor {
 
     @Override
     public void onRerun(List<TestDTO> tests) {
-        List<TestInvocationContext> invocationContexts = getInvocationContexts(tests);
-        RunContextService.setInvocationContexts(invocationContexts);
+        Map<TestInvocationContext, Long> invocationContexts = getInvocationContexts(tests);
+        RunContextService.setInvocationContextToTestIds(invocationContexts);
     }
 
     /**
-     * Processes test UUIDs in order to restore original test execution context for appropriate test
+     * Processes test correlation data in order to restore original test execution context for appropriate test
      *
      * @param testDTOs tests
      * @return collection of test execution contexts
      */
-    private List<TestInvocationContext> getInvocationContexts(List<TestDTO> testDTOs) {
-        return testDTOs.stream().map(test -> TestInvocationContext.fromJsonString(test.getCorrelationData()))
-                       .collect(Collectors.toList());
+    private Map<TestInvocationContext, Long> getInvocationContexts(List<TestDTO> testDTOs) {
+        return testDTOs.stream()
+                       .collect(Collectors.toMap(
+                               test -> TestInvocationContext.fromJsonString(test.getCorrelationData()),
+                               TestDTO::getId,
+                               (testId1, testId2) -> testId1
+                       ));
     }
 
     /**
@@ -82,13 +86,6 @@ public class RerunAwareListener implements RerunListener, IMethodInterceptor {
                         dependantMethods.addAll(dependUponMethodsFromItem);
                         dependantGroups.addAll(dependUponGroupsFromItem);
 
-                        // Methods with multiple invocation and/or retry logic will be executed in original way
-                        boolean multipleInvocations = method.getInvocationCount() > 1;
-                        boolean shouldBeRetried = retryAnalyser != null && retryAnalyser != DisabledRetryAnalyzer.class;
-                        if (multipleInvocations || shouldBeRetried) {
-                            RunContextService.setForceRerun(method, runner);
-                        }
-
                         // Collect data providers line to rerun
                         collectDataProvidersForRerun(invocationsForRerun, method, runner);
                     } else {
@@ -98,7 +95,7 @@ public class RerunAwareListener implements RerunListener, IMethodInterceptor {
                 }
             }
 
-            resolveDependantMethods(methods, dependantMethods, dependantGroups, methodsToSkipOnRerun, runner);
+            resolveDependantMethods(methods, dependantMethods, dependantGroups, methodsToSkipOnRerun);
 
             methods.removeAll(methodsToSkipOnRerun);
         }
@@ -127,52 +124,37 @@ public class RerunAwareListener implements RerunListener, IMethodInterceptor {
      * @param dependantMethods     dependant method names
      * @param dependantGroups      dependant group names
      * @param methodsToSkipOnRerun initial set of methods to skip on rerun, that can be altered if contains dependant methods
-     * @param context              test context
      */
-    private void resolveDependantMethods(List<IMethodInstance> methods, Set<String> dependantMethods, Set<String> dependantGroups,
-                                         Set<IMethodInstance> methodsToSkipOnRerun, ITestContext context) {
-        boolean dependantMethodExists = true; // Flag needs to identify not defined dependant methods or groups
-        while (dependantMethodExists) {
-            dependantMethodExists = false;
-            for (IMethodInstance methodInstance : methods) {
-                ITestNGMethod method = methodInstance.getMethod();
-                boolean isMethodDependingUpon = isMethodDependingUpon(dependantMethods, method);
-                boolean isGroupDependingUpon = isGroupDependingUpon(dependantGroups, method);
-                boolean forced = isMethodDependingUpon || isGroupDependingUpon;
+    private void resolveDependantMethods(List<IMethodInstance> methods,
+                                         Set<String> dependantMethods,
+                                         Set<String> dependantGroups,
+                                         Set<IMethodInstance> methodsToSkipOnRerun) {
+        for (IMethodInstance methodInstance : methods) {
+            ITestNGMethod method = methodInstance.getMethod();
 
-                if (forced) {
-                    RunContextService.setForceRerun(method, context);
+            boolean isMethodDependingUpon = isMethodDependingUpon(dependantMethods, method);
+            boolean isGroupDependingUpon = isGroupDependingUpon(dependantGroups, method);
 
-                    if (isMethodDependingUpon) {
-                        String dependsUponMethodKey = buildDependsUponMethodKey(method);
-                        dependantMethods.remove(dependsUponMethodKey);
-                        methodsToSkipOnRerun.remove(methodInstance);
+            if (isMethodDependingUpon || isGroupDependingUpon) {
+                methodsToSkipOnRerun.remove(methodInstance);
 
-                        Set<String> dependUponMethodsFromItem = collectDependantMethods(method);
-                        dependantMethods.addAll(dependUponMethodsFromItem);
-                    }
+                if (isMethodDependingUpon) {
+                    String dependsUponMethodKey = buildDependsUponMethodKey(method);
+                    dependantMethods.remove(dependsUponMethodKey);
 
-                    if (isGroupDependingUpon) {
-                        filterDependantGroups(dependantGroups, method)
-                                .forEach(dependantGroups::remove);
-                        methodsToSkipOnRerun.remove(methodInstance);
+                    Set<String> dependUponMethodsFromItem = collectDependantMethods(method);
+                    dependantMethods.addAll(dependUponMethodsFromItem);
+                }
 
-                        Set<String> dependUponGroupsFromItem = collectDependantGroups(method);
-                        dependantGroups.addAll(dependUponGroupsFromItem);
-                    }
+                if (isGroupDependingUpon) {
+                    this.filterDependantGroups(dependantGroups, method)
+                        .forEach(dependantGroups::remove);
 
-                    dependantMethodExists = true;
-                    break;
+                    Set<String> dependUponGroupsFromItem = collectDependantGroups(method);
+                    dependantGroups.addAll(dependUponGroupsFromItem);
                 }
             }
         }
-
-//        if (!dependantMethods.isEmpty()) {
-//            String messagePattern = dependantMethods.size() > 1 ?
-//                    "Dependant methods or groups '%s' don`t exist" :
-//                    "Dependant method or group '%s' does not exist";
-//            LOGGER.warn(String.format(messagePattern, String.join(", ", dependantMethods)));
-//        }
     }
 
     private boolean isMethodDependingUpon(Set<String> dependUponMethods, ITestNGMethod method) {
@@ -224,10 +206,11 @@ public class RerunAwareListener implements RerunListener, IMethodInterceptor {
     }
 
     private void collectDataProvidersForRerun(List<TestInvocationContext> invocationContexts, ITestNGMethod method, ITestContext context) {
-        invocationContexts.stream()
-                          .mapToInt(TestInvocationContext::getDataProviderIndex)
-                          .filter(index -> index != -1)
-                          .forEach(index -> RunContextService.setOriginalDataProviderIndex(index, method, context));
+        Set<Integer> indicesForRerun = invocationContexts.stream()
+                                                         .map(TestInvocationContext::getDataProviderIndex)
+                                                         .filter(index -> index != -1)
+                                                         .collect(Collectors.toSet());
+        RunContextService.setDataProviderIndicesForRerun(method, context, indicesForRerun);
     }
 
 }
