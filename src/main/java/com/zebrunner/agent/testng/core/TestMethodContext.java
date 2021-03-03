@@ -16,9 +16,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class TestMethodContext {
 
     /**
-     * Represents current test method invocation. 0 means that method was not invoked yet (initial value for TestNG is 1).
+     * Represents current test method invocation. 0 means that method was not invoked yet.
      */
-    private final AtomicInteger currentInvocationCount = new AtomicInteger(0);
+    private final ThreadLocal<AtomicInteger> currentInvocationCount
+            = ThreadLocal.withInitial(() -> new AtomicInteger(0));
 
     @Getter
     private List<Integer> dataProviderIndicesForRerun = Collections.emptyList();
@@ -47,9 +48,10 @@ public class TestMethodContext {
     public int getCurrentDataProviderIndex(Object[] actualTestParameters) {
         return this.getCurrentDataProviderIteratorIndex()
                    .filter(currentIndex -> currentIndex != -1)
-                   // the checks be actualTestParameters are performed for cases
+                   // the checks are performed for cases
                    // when data provider data is loaded in one thread but is used in another one.
-                   // in such cases we try to find data provider line by matching the test method parameters
+                   // in such cases we try to find data provider line by matching
+                   // the test method arguments or their values
                    .orElseGet(() -> this.getReferenceEqualDataProviderData(actualTestParameters)
                                         .orElseGet(() -> this.getValueEqualDataProviderData(actualTestParameters)
                                                              .orElse(-1))
@@ -87,12 +89,12 @@ public class TestMethodContext {
         return Optional.empty();
     }
 
-    public void incrementInvocationCount() {
-        currentInvocationCount.incrementAndGet();
+    public void incrementInvocationIndex() {
+        currentInvocationCount.get().incrementAndGet();
     }
 
-    public int getCurrentInvocationCount() {
-        return currentInvocationCount.get();
+    public int getCurrentInvocationIndex() {
+        return currentInvocationCount.get().get();
     }
 
 }
