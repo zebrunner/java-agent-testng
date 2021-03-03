@@ -198,6 +198,14 @@ public class TestNGAdapter {
         }
     }
 
+    public void registerAfterTestStart() {
+        registrar.registerAfterTestStart();
+    }
+
+    public void registerAfterTestFinish() {
+        registrar.registerAfterTestFinish();
+    }
+
     private TestInvocationContext buildTestInvocationContext(ITestResult testResult) {
         ITestNGMethod testMethod = testResult.getMethod();
         ITestContext testContext = testResult.getTestContext();

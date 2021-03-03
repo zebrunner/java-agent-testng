@@ -99,12 +99,35 @@ public class TestRunListener extends RerunAwareListener implements ISuiteListene
                 adapter.registerHeadlessTestStart(tr, tm);
             }
             if (configurationMethod.isAfterMethodConfiguration()) {
-                ITestNGMethod[] afterTestMethods = tm.getTestClass().getAfterTestMethods();
-                System.out.println();
+                adapter.registerAfterTestStart();
             }
         }
     }
 
+    @Override
+    public void onConfigurationSuccess(ITestResult tr) {
+        registerAfterTestFinishIfApplicable(tr);
+    }
 
+    @Override
+    public void onConfigurationFailure(ITestResult tr) {
+        registerAfterTestFinishIfApplicable(tr);
+    }
+
+    @Override
+    public void onConfigurationSkip(ITestResult tr) {
+        registerAfterTestFinishIfApplicable(tr);
+    }
+
+    private void registerAfterTestFinishIfApplicable(ITestResult testResult) {
+        ITestNGMethod testMethod = testResult.getMethod();
+        if (testMethod instanceof ConfigurationMethod) {
+            ConfigurationMethod configurationMethod = (ConfigurationMethod) testMethod;
+
+            if (configurationMethod.isAfterMethodConfiguration()) {
+                adapter.registerAfterTestFinish();
+            }
+        }
+    }
 
 }
