@@ -106,20 +106,20 @@ public class TestRunListener extends RerunAwareListener implements ISuiteListene
 
     @Override
     public void onConfigurationSuccess(ITestResult tr) {
-        registerAfterTestFinishIfApplicable(tr);
+        registerFinishOfAfterMethod(tr);
     }
 
     @Override
     public void onConfigurationFailure(ITestResult tr) {
-        registerAfterTestFinishIfApplicable(tr);
+        registerFinishOfAfterMethod(tr);
     }
 
     @Override
     public void onConfigurationSkip(ITestResult tr) {
-        registerAfterTestFinishIfApplicable(tr);
+        registerFinishOfAfterMethod(tr);
     }
 
-    private void registerAfterTestFinishIfApplicable(ITestResult testResult) {
+    private void registerFinishOfAfterMethod(ITestResult testResult) {
         ITestNGMethod testMethod = testResult.getMethod();
         if (testMethod instanceof ConfigurationMethod) {
             ConfigurationMethod configurationMethod = (ConfigurationMethod) testMethod;
