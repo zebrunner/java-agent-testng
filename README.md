@@ -11,7 +11,7 @@ Including the agent into your project is easy - just add the dependency to the b
 #### **Gradle**
 ```groovy
 dependencies {
-  testImplementation 'com.zebrunner:agent-testng:1.3.0'
+  testImplementation 'com.zebrunner:agent-testng:1.4.0'
 }
 ```
 
@@ -20,7 +20,7 @@ dependencies {
 <dependency>
   <groupId>com.zebrunner</groupId>
   <artifactId>agent-testng</artifactId>
-  <version>1.3.0</version>
+  <version>1.4.0</version>
   <scope>test</scope>
 </dependency>
 ```
@@ -412,17 +412,17 @@ public class AwesomeTests {
 
     @Test
     @Priority(Priority.P1)
-    @JiraReference("ZBR-1231")
     @TestLabel(name = "app", value = {"reporting-service:v1.0", "reporting-service:v1.1"})
     public void awesomeTest() {
-        // some code here  
-        Label.attach("Chrome", "85.0");
+        // some code here
+        Label.attachToTest("group", "regression");
+        Label.attachToTestRun("CI", "Jenkins");
         // meaningful assertions
     }
 
 }
 ```
-The test from the sample above attaches 5 labels: 1 priority, 1 jira-reference, 2 'app' labels, 1 'Chrome' label.
+The test from the sample above attaches 5 labels: 1 priority, 2 'app' labels, 1 'CI' label, 1 'CI' label to test run.
 
 The values of attached labels will be displayed in Zebrunner under the name of a corresponding test. The values of the `@JiraReference` annotation will be displayed in blue pills to the right of the test name.
 
