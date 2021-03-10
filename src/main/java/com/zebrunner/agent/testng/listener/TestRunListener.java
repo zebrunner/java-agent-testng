@@ -47,7 +47,7 @@ public class TestRunListener extends RerunAwareListener implements ISuiteListene
         log.debug("Beginning TestRunListener -> onTestStart");
         if (RetryService.isRetryFinished(testResult.getMethod(), testResult.getTestContext())) {
             // incrementing invocation count should be done for real tests and not retry!
-            RunContextService.incrementMethodInvocationCount(testResult.getMethod(), testResult.getTestContext());
+            RunContextService.incrementMethodInvocationIndex(testResult.getMethod(), testResult.getTestContext());
         }
         adapter.registerTestStart(testResult);
         log.debug("Finishing TestRunListener -> onTestStart");
@@ -90,13 +90,42 @@ public class TestRunListener extends RerunAwareListener implements ISuiteListene
     }
 
     @Override
-    public void beforeConfiguration(ITestResult tr) {
-        ITestNGMethod resultMethod = tr.getMethod();
-        if (resultMethod instanceof ConfigurationMethod) {
-            ConfigurationMethod method = (ConfigurationMethod) resultMethod;
+    public void beforeConfiguration(ITestResult tr, ITestNGMethod tm) {
+        ITestNGMethod testMethod = tr.getMethod();
+        if (testMethod instanceof ConfigurationMethod) {
+            ConfigurationMethod configurationMethod = (ConfigurationMethod) testMethod;
 
-            if (method.isBeforeMethodConfiguration()) {
-                adapter.registerHeadlessTestStart(tr);
+            if (configurationMethod.isBeforeMethodConfiguration()) {
+                adapter.registerHeadlessTestStart(tr, tm);
+            }
+            if (configurationMethod.isAfterMethodConfiguration()) {
+                adapter.registerAfterTestStart();
+            }
+        }
+    }
+
+    @Override
+    public void onConfigurationSuccess(ITestResult tr) {
+        registerFinishOfAfterMethod(tr);
+    }
+
+    @Override
+    public void onConfigurationFailure(ITestResult tr) {
+        registerFinishOfAfterMethod(tr);
+    }
+
+    @Override
+    public void onConfigurationSkip(ITestResult tr) {
+        registerFinishOfAfterMethod(tr);
+    }
+
+    private void registerFinishOfAfterMethod(ITestResult testResult) {
+        ITestNGMethod testMethod = testResult.getMethod();
+        if (testMethod instanceof ConfigurationMethod) {
+            ConfigurationMethod configurationMethod = (ConfigurationMethod) testMethod;
+
+            if (configurationMethod.isAfterMethodConfiguration()) {
+                adapter.registerAfterTestFinish();
             }
         }
     }

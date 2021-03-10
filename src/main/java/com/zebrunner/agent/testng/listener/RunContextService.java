@@ -27,14 +27,14 @@ public class RunContextService {
         RunContextService.invocationContextToTestIds = invocationContextToTestIds;
     }
 
-    public static void incrementMethodInvocationCount(ITestNGMethod method, ITestContext context) {
+    public static void incrementMethodInvocationIndex(ITestNGMethod method, ITestContext context) {
         RunContextService.getOrInitRunContext(method, context)
-                         .incrementInvocationCount();
+                         .incrementInvocationIndex();
     }
 
-    public static int getMethodInvocationCount(ITestNGMethod method, ITestContext context) {
+    public static int getMethodInvocationIndex(ITestNGMethod method, ITestContext context) {
         return RunContextService.getOrInitRunContext(method, context)
-                                .getCurrentInvocationCount();
+                                .getCurrentInvocationIndex();
     }
 
     public static void setDataProviderIndicesForRerun(ITestNGMethod method, ITestContext context, Collection<Integer> indices) {

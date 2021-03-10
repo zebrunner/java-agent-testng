@@ -22,7 +22,6 @@ import org.testng.ITestContext;
 import org.testng.ITestNGMethod;
 import org.testng.ITestResult;
 import org.testng.annotations.Test;
-import org.testng.internal.thread.ThreadUtil;
 import org.testng.xml.XmlSuite;
 
 import java.io.PrintWriter;
@@ -93,17 +92,15 @@ public class TestNGAdapter {
         }
     }
 
-    public void registerHeadlessTestStart(ITestResult testResult) {
+    public void registerHeadlessTestStart(ITestResult testResult, ITestNGMethod nextTestMethod) {
         if (!registrar.isTestStarted()) { // we should not register the same headless test twice
-            ITestNGMethod nextInvokedTest = getNextInvokedTest(testResult);
-
-            if (isRetryFinished(nextInvokedTest, testResult.getTestContext())) {
+            if (isRetryFinished(nextTestMethod, testResult.getTestContext())) {
                 log.debug("TestNGAdapter -> registerHeadlessTestStart: retry is finished");
 
                 TestInvocationContext testContext = buildTestInvocationContext(testResult);
                 TestStartDescriptor testStartDescriptor = buildTestStartDescriptor(null, testResult);
 
-                setZebrunnerTestIdOnRerun(testResult, nextInvokedTest, testStartDescriptor);
+                setZebrunnerTestIdOnRerun(testResult, nextTestMethod, testStartDescriptor);
 
                 String id = generateTestId(testContext);
                 registrar.registerHeadlessTestStart(id, testStartDescriptor);
@@ -113,31 +110,16 @@ public class TestNGAdapter {
         }
     }
 
-    private void setZebrunnerTestIdOnRerun(ITestResult testResult, ITestNGMethod nextInvokedTest, TestStartDescriptor testStartDescriptor) {
+    private void setZebrunnerTestIdOnRerun(ITestResult testResult, ITestNGMethod testMethod, TestStartDescriptor testStartDescriptor) {
         if (RerunContextHolder.isRerun()) {
             ITestContext context = testResult.getTestContext();
             Object[] parameters = testResult.getParameters();
 
-            int dataProviderIndex = RunContextService.getCurrentDataProviderIndex(nextInvokedTest, context, parameters);
+            int dataProviderIndex = RunContextService.getCurrentDataProviderIndex(testMethod, context, parameters);
 
-            RunContextService.getZebrunnerTestIdOnRerun(nextInvokedTest, dataProviderIndex)
+            RunContextService.getZebrunnerTestIdOnRerun(testMethod, dataProviderIndex)
                              .ifPresent(testStartDescriptor::setZebrunnerId);
         }
-    }
-
-    // Id value is set to a test right before execution. All the tests are executed sequentially.
-    // Thus, we can consider the last test with id equal to current thread as the next test to be executed.
-    private ITestNGMethod getNextInvokedTest(ITestResult testResult) {
-        ITestNGMethod[] methods = testResult.getTestContext().getAllTestMethods();
-
-        for (int i = methods.length - 1; i >= 0; i--) {
-            ITestNGMethod method = methods[i];
-            if (method.getId() != null && ThreadUtil.currentThreadInfo().equals(method.getId())) {
-                return method;
-            }
-        }
-
-        return null;
     }
 
     private TestStartDescriptor buildTestStartDescriptor(String correlationData, ITestResult testResult) {
@@ -216,18 +198,26 @@ public class TestNGAdapter {
         }
     }
 
+    public void registerAfterTestStart() {
+        registrar.registerAfterTestStart();
+    }
+
+    public void registerAfterTestFinish() {
+        registrar.registerAfterTestFinish();
+    }
+
     private TestInvocationContext buildTestInvocationContext(ITestResult testResult) {
         ITestNGMethod testMethod = testResult.getMethod();
         ITestContext testContext = testResult.getTestContext();
         Object[] parameters = testResult.getParameters();
 
         int dataProviderIndex = RunContextService.getCurrentDataProviderIndex(testMethod, testContext, parameters);
-        int invocationCount = RunContextService.getMethodInvocationCount(testMethod, testContext);
+        int invocationIndex = RunContextService.getMethodInvocationIndex(testMethod, testContext);
 
-        return buildTestInvocationContext(testMethod, dataProviderIndex, parameters, invocationCount);
+        return buildTestInvocationContext(testMethod, dataProviderIndex, parameters, invocationIndex);
     }
 
-    private TestInvocationContext buildTestInvocationContext(ITestNGMethod testMethod, int dataProviderIndex, Object[] parameters, int invocationCount) {
+    private TestInvocationContext buildTestInvocationContext(ITestNGMethod testMethod, int dataProviderIndex, Object[] parameters, int invocationIndex) {
         String displayName = null;
         Test testAnnotation = testMethod.getConstructorOrMethod()
                                         .getMethod()
@@ -252,7 +242,7 @@ public class TestNGAdapter {
                                     .parameterClassNames(parameterClassNames)
                                     .dataProviderIndex(dataProviderIndex)
                                     .instanceIndex(instanceIndex)
-                                    .invocationIndex(invocationCount)
+                                    .invocationIndex(invocationIndex)
                                     .build();
     }
 
