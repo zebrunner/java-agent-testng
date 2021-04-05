@@ -1,5 +1,7 @@
 package com.zebrunner.agent.testng.adapter;
 
+import com.zebrunner.agent.core.config.ConfigurationHolder;
+import com.zebrunner.agent.core.config.provider.SystemPropertiesConfigurationProvider;
 import com.zebrunner.agent.core.registrar.RerunContextHolder;
 import com.zebrunner.agent.core.registrar.TestRunRegistrar;
 import com.zebrunner.agent.core.registrar.descriptor.Status;
@@ -9,8 +11,10 @@ import com.zebrunner.agent.core.registrar.descriptor.TestRunStartDescriptor;
 import com.zebrunner.agent.core.registrar.descriptor.TestStartDescriptor;
 import com.zebrunner.agent.core.registrar.maintainer.ChainedMaintainerResolver;
 import com.zebrunner.agent.testng.core.FactoryInstanceHolder;
-import com.zebrunner.agent.testng.core.RootXmlSuiteMaintainerResolver;
+import com.zebrunner.agent.testng.core.RootXmlSuiteLabelAssigner;
 import com.zebrunner.agent.testng.core.TestInvocationContext;
+import com.zebrunner.agent.testng.core.config.RootXmlSuiteConfigurationProvider;
+import com.zebrunner.agent.testng.core.maintainer.RootXmlSuiteMaintainerResolver;
 import com.zebrunner.agent.testng.core.testname.TestNameResolver;
 import com.zebrunner.agent.testng.core.testname.TestNameResolverRegistry;
 import com.zebrunner.agent.testng.listener.RetryService;
@@ -62,10 +66,15 @@ public class TestNGAdapter {
             }
             String name = rootXmlSuite.getName();
 
-            RootXmlSuiteMaintainerResolver maintainerResolver = new RootXmlSuiteMaintainerResolver(rootXmlSuite);
-            ChainedMaintainerResolver.addFirst(maintainerResolver);
+            ChainedMaintainerResolver.addFirst(new RootXmlSuiteMaintainerResolver(rootXmlSuite));
+
+            ConfigurationHolder.addConfigurationProviderAfter(
+                    new RootXmlSuiteConfigurationProvider(rootXmlSuite),
+                    SystemPropertiesConfigurationProvider.class
+            );
 
             registrar.registerStart(new TestRunStartDescriptor(name, "testng", OffsetDateTime.now(), name));
+            RootXmlSuiteLabelAssigner.getInstance().assignTestRunLabels(rootXmlSuite);
         }
     }
 
