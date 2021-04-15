@@ -24,7 +24,7 @@ public class RootXmlSuiteConfigurationProvider implements ConfigurationProvider 
                                      .projectKey(rootXmlSuite.getParameter(PROJECT_KEY_PARAMETER))
                                      .run(new ReportingConfiguration.RunConfiguration(
                                              rootXmlSuite.getParameter(RUN_DISPLAY_NAME_PARAMETER),
-                                             null, null, null
+                                             null, null, null, null
                                      ))
                                      .notification(new ReportingConfiguration.NotificationConfiguration(
                                              rootXmlSuite.getParameter(NOTIFICATION_SLACK_CHANNELS_PARAMETER),
@@ -32,18 +32,10 @@ public class RootXmlSuiteConfigurationProvider implements ConfigurationProvider 
                                              rootXmlSuite.getParameter(NOTIFICATION_EMAILS_PARAMETER)
                                      ))
                                      .milestone(new ReportingConfiguration.MilestoneConfiguration(
-                                             parseLong(rootXmlSuite.getParameter(MILESTONE_ID_PARAMETER)),
+                                             ConfigurationProvider.parseLong(rootXmlSuite.getParameter(MILESTONE_ID_PARAMETER)),
                                              rootXmlSuite.getParameter(MILESTONE_NAME_PARAMETER)
                                      ))
                                      .build();
-    }
-
-    private Long parseLong(String property) {
-        try {
-            return Long.valueOf(property);
-        } catch (NumberFormatException e) {
-            return null;
-        }
     }
 
 }
