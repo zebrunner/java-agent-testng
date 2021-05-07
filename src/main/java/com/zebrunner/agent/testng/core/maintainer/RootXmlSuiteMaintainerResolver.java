@@ -1,4 +1,4 @@
-package com.zebrunner.agent.testng.core;
+package com.zebrunner.agent.testng.core.maintainer;
 
 import com.zebrunner.agent.core.registrar.maintainer.MaintainerResolver;
 import lombok.RequiredArgsConstructor;
