@@ -44,7 +44,8 @@ public class RetryAnalyzerInterceptor implements IRetryAnalyzer {
             try (PrintWriter pw = new PrintWriter(sw)) {
                 result.getThrowable().printStackTrace(pw);
             }
-            if (registrar.isKnownIssueAttachedToTest(sw.toString())) {
+            Boolean isIssueFound = registrar.isKnownIssueAttachedToTest(sw.toString());
+            if ((isIssueFound != null) && isIssueFound) {
                 log.info("Known issue is attached to test for current failure stacktrace. Hence skipping retry logic");
                 needRetry = false;
             } else {
