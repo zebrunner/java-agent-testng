@@ -1,6 +1,11 @@
 # Zebrunner TestNG agent
 The official Zebrunner TestNG agent provides reporting and smart reruns functionality. No special configuration is required to enable the Zebrunner Listener for TestNG - service discovery mechanism will automatically register the listener as soon as it becomes available on the classpath of your test project.
 
+> **Carina support**
+> 
+> Since Carina is a TestNG-based automation framework all steps described in this doc for TestNG are valid for Carina as well.
+> Official Carina documentation can be found [here](https://qaprosoft.github.io/carina/).
+
 ## Inclusion into your project 
 The agent comes bundled with TestNG 7.3.0, so you should comment out or exclude your TestNG dependency from the project. If you are using a version of TestNG below 7.3.0, we cannot guarantee the correct functionality of the agent.
 
@@ -11,7 +16,7 @@ Including the agent into your project is easy - just add the dependency to the b
 #### **Gradle**
 ```groovy
 dependencies {
-  testImplementation 'com.zebrunner:agent-testng:1.4.0'
+  testImplementation 'com.zebrunner:agent-testng:1.6.0'
 }
 ```
 
@@ -20,7 +25,7 @@ dependencies {
 <dependency>
   <groupId>com.zebrunner</groupId>
   <artifactId>agent-testng</artifactId>
-  <version>1.4.0</version>
+  <version>1.6.0</version>
   <scope>test</scope>
 </dependency>
 ```
