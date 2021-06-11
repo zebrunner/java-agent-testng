@@ -10,6 +10,7 @@ import com.zebrunner.agent.core.registrar.descriptor.TestRunFinishDescriptor;
 import com.zebrunner.agent.core.registrar.descriptor.TestRunStartDescriptor;
 import com.zebrunner.agent.core.registrar.descriptor.TestStartDescriptor;
 import com.zebrunner.agent.core.registrar.maintainer.ChainedMaintainerResolver;
+import com.zebrunner.agent.testng.core.ExceptionUtils;
 import com.zebrunner.agent.testng.core.FactoryInstanceHolder;
 import com.zebrunner.agent.testng.core.RootXmlSuiteLabelAssigner;
 import com.zebrunner.agent.testng.core.TestInvocationContext;
@@ -28,8 +29,6 @@ import org.testng.ITestResult;
 import org.testng.annotations.Test;
 import org.testng.xml.XmlSuite;
 
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Method;
 import java.time.Instant;
@@ -171,7 +170,7 @@ public class TestNGAdapter {
 
             long endedAtMillis = testResult.getEndMillis();
             OffsetDateTime endedAt = ofMillis(endedAtMillis);
-            String errorMessage = getPrintedStackTrace(testResult.getThrowable());
+            String errorMessage = ExceptionUtils.getStacktrace(testResult.getThrowable());
 
             TestFinishDescriptor result = new TestFinishDescriptor(Status.FAILED, endedAt, errorMessage);
             registrar.registerTestFinish(id, result);
@@ -188,22 +187,12 @@ public class TestNGAdapter {
             String id = generateTestId(testContext);
 
             OffsetDateTime endedAt = ofMillis(testResult.getEndMillis());
-            String errorMessage = getPrintedStackTrace(testResult.getThrowable());
+            String errorMessage = ExceptionUtils.getStacktrace(testResult.getThrowable());
 
             TestFinishDescriptor result = new TestFinishDescriptor(Status.SKIPPED, endedAt, errorMessage);
             registrar.registerTestFinish(id, result);
         } else {
             log.debug("TestNGAdapter -> registerSkippedTestFinish: retry is NOT finished");
-        }
-    }
-
-    private String getPrintedStackTrace(Throwable throwable) {
-        if (throwable != null) {
-            StringWriter errorMessageStringWriter = new StringWriter();
-            throwable.printStackTrace(new PrintWriter(errorMessageStringWriter));
-            return errorMessageStringWriter.toString();
-        } else {
-            return "";
         }
     }
 

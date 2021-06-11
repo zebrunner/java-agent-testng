@@ -1,8 +1,8 @@
 package com.zebrunner.agent.testng.core.retry;
 
 import com.zebrunner.agent.core.config.ConfigurationHolder;
-import com.zebrunner.agent.core.config.ConfigurationProvider;
 import com.zebrunner.agent.core.registrar.TestRunRegistrar;
+import com.zebrunner.agent.testng.core.ExceptionUtils;
 import com.zebrunner.agent.testng.listener.RetryService;
 import lombok.extern.slf4j.Slf4j;
 import org.testng.IRetryAnalyzer;
@@ -11,8 +11,6 @@ import org.testng.ITestNGMethod;
 import org.testng.ITestResult;
 import org.testng.internal.InstanceCreator;
 
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -39,13 +37,10 @@ public class RetryAnalyzerInterceptor implements IRetryAnalyzer {
         boolean needRetry = retryAnalyzer.retry(result);
 
         // checking whether there are some known issues were mapped for stacktrace and skipping retry logic in such case
-        if ((ConfigurationHolder.getRunRetryKnownIssues() != null) && !ConfigurationHolder.getRunRetryKnownIssues()) {
-            StringWriter sw = new StringWriter();
-            try (PrintWriter pw = new PrintWriter(sw)) {
-                result.getThrowable().printStackTrace(pw);
-            }
-            Boolean isIssueFound = registrar.isKnownIssueAttachedToTest(sw.toString());
-            if ((isIssueFound != null) && isIssueFound) {
+        if (needRetry && !ConfigurationHolder.shouldRetryKnownIssues()) {
+            String stacktrace = ExceptionUtils.getStacktrace(result.getThrowable());
+
+            if (registrar.isKnownIssueAttachedToTest(stacktrace)) {
                 log.info("Known issue is attached to test for current failure stacktrace. Hence skipping retry logic");
                 needRetry = false;
             } else {
