@@ -4,7 +4,7 @@ The official Zebrunner TestNG agent provides reporting and smart reruns function
 > **Carina support**
 > 
 > Since Carina is a TestNG-based automation framework all steps described in this doc for TestNG are valid for Carina as well.
-> Official Carina documentation can be found [here](https://qaprosoft.github.io/carina/).
+> Official Carina documentation can be found [here](https://zebrunner.github.io/carina/).
 
 ## Inclusion into your project 
 The agent comes bundled with TestNG 7.3.0, so you should comment out or exclude your TestNG dependency from the project. If you are using a version of TestNG below 7.3.0, we cannot guarantee the correct functionality of the agent.
