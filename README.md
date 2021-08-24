@@ -731,6 +731,74 @@ public class WebDriverManager {
 
 }
 ```
+### Integration with test case management tools
+
+For now Zebrunner supports TestRail, Xray and Zephyr test case management tools.
+
+### Testrail
+
+For successful upload of test run results in TestRail two steps must be performed:
+
+1) TestRail integration is configured and enabled in Zebrunner project
+2) TestRail configuration is performed on agent side
+
+
+**Mandatory configuration:**
+
+For test run:
+
+- Set TestRail suite id
+```java
+TestRail.setSuiteId("12");
+```
+
+For test:
+
+- Set TestRail case id
+```java
+TestRail.setCaseId("356");
+```
+or via annotation
+```java
+@TestRailCaseId({"356", "357"})
+```
+
+By default, new run (containing only cases added to tests) will be created in TestRail on test run finish.
+
+**Optional configuration:**
+
+For test run:
+
+- Disable results upload in TestRail
+```java
+TestRail.disableSync();
+```
+- Enable real-time (per test) results upload in TestRail
+```java
+TestRail.enableRealTimeSync();
+```
+- Include all cases from suite into newly created run in TestRail
+```java
+TestRail.includeAllTestCasesInNewRun();
+```
+
+- Add results into existing TestRail run (if not provided, test run is treated as new)
+```java
+TestRail.setRunId("12");
+```
+
+- Set custom name for new TestRail run (by default used Zebrunner test run name)
+```java
+TestRail.setRunName("Cool customized test run name");
+```
+- Add results in TestRail milestone with provided name
+```java
+TestRail.setMilestone("Megamilestone");
+```
+- Set TestRail run assignee
+```java
+TestRail.setAssignee("useruser@anymail.com");
+```
 
 ## Contribution
 To check out the project and build from the source, do the following:
