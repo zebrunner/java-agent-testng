@@ -733,14 +733,14 @@ public class WebDriverManager {
 ```
 ### Integration with test case management tools
 
-For now Zebrunner supports TestRail, Xray and Zephyr test case management tools.
+For now Zebrunner supports TestRail, Xray and Zephyr Scale test case management tools.
 
 ### Testrail
 
 For successful upload of test run results in TestRail two steps must be performed:
 
 1) TestRail integration is configured and enabled in Zebrunner project
-2) TestRail configuration is performed on agent side
+2) TestRail configuration is performed on the agent side
 
 
 **Mandatory configuration:**
@@ -800,6 +800,96 @@ TestRail.setMilestone("Megamilestone");
 TestRail.setAssignee("useruser@anymail.com");
 ```
 
+### Xray
+
+For successful upload of test run results in Xray two steps must be performed:
+
+1) Xray integration is configured and enabled in Zebrunner project
+2) Xray configuration is performed on the agent side
+
+
+**Mandatory configuration:**
+
+For test run:
+
+- Set Xray execution key
+```java
+Xray.setExecutionKey("FSK-23");
+```
+
+For test:
+
+- Set Xray test key
+```java
+Xray.setTestKey("FSK-356");
+```
+or via annotation
+```java
+@XrayTestKey({"FSK-357", "FSK-358"})
+```
+
+By default, results will be uploded to Xray on test run finish.
+
+**Optional configuration:**
+
+For test run:
+
+- Disable results upload in Xray
+```java
+Xray.disableSync();
+```
+- Enable real-time (per test) results upload in Xray
+```java
+Xray.enableRealTimeSync();
+```
+
+### Zephyr Scale
+
+For successful upload of test run results in Zephyr two steps must be performed:
+
+1) Zephyr integration is configured and enabled in Zebrunner project
+2) Zephyr configuration is performed on the agent side
+
+
+**Mandatory configuration:**
+
+For test run:
+
+- Set Zephyr test cycle key
+```java
+Zephyr.setTestCycleKey("QAP-R1");
+```
+
+- Set Zephyr Jira project key
+```java
+Zephyr.setJiraProjectKey("QAP");
+```
+
+For test:
+
+- Set Zephyr test case key
+```java
+Zephyr.setTestCaseKey("QAP-T4");
+```
+or via annotation
+```java
+@ZephyrTestCaseKey({"QAP-T5", "QAP-T6"})
+```
+
+By default, results will be uploded to Zephyr on test run finish.
+
+**Optional configuration:**
+
+For test run:
+
+- Disable results upload in Zephyr
+```java
+Zephyr.disableSync();
+```
+- Enable real-time (per test) results upload in Zephyr
+```java
+Zephyr.enableRealTimeSync();
+```
 ## Contribution
 To check out the project and build from the source, do the following:
 ```
