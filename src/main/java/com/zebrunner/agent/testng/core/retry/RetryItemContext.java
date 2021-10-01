@@ -1,5 +1,8 @@
 package com.zebrunner.agent.testng.core.retry;
 
+import lombok.ToString;
+
+@ToString
 public class RetryItemContext {
 
     /**
@@ -18,4 +21,5 @@ public class RetryItemContext {
     public boolean isFinished() {
         return !started;
     }
+
 }

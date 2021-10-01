@@ -3,6 +3,7 @@ package com.zebrunner.agent.testng.listener;
 import com.zebrunner.agent.testng.core.FactoryInstanceHolder;
 import com.zebrunner.agent.testng.core.retry.RetryContext;
 import com.zebrunner.agent.testng.core.retry.RetryItemContext;
+import lombok.extern.slf4j.Slf4j;
 import org.testng.IRetryAnalyzer;
 import org.testng.ITestContext;
 import org.testng.ITestNGMethod;
@@ -15,6 +16,7 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
+@Slf4j
 public class RetryService {
 
     private RetryService() {
