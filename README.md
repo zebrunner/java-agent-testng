@@ -890,6 +890,39 @@ Zephyr.disableSync();
 ```java
 Zephyr.enableRealTimeSync();
 ```
+
+##Integration with notification tools
+
+For now Zebrunner supports Slack and Microsoft Teams notifications.
+
+###Slack
+
+In order to configure notifications for test runs you'll have to provide additional parameters to reporting agent configuration.
+
+`REPORTING_NOTIFICATION_SLACK_CHANNELS` using environment variable (e.g. `REPORTING_NOTIFICATION_SLACK_CHANNELS=channel-01,channel-02`)
+
+`reporting.notification.slack-channels` using .yaml, .properties files or system properties
+
+For getting notifications on each failed test include:
+
+`REPORTING_NOTIFICATION_NOTIFY_ON_EACH_FAILURE` using environment variable (e.g. `REPORTING_NOTIFICATION_NOTIFY_ON_EACH_FAILURE=true`)
+
+`reporting.notification.notify-on-each-failure` using .yaml, .properties files or system properties
+
+### Microsoft Teams
+
+In order to configure notifications for test runs you'll have to provide additional parameters to reporting agent configuration.
+
+`REPORTING_NOTIFICATION_MS_TEAMS_CHANNELS` using environment variable (e.g. `REPORTING_NOTIFICATION_MS_TEAMS_CHANNELS=channel-01,channel-02`)
+
+`reporting.notification.ms-teams-channels` using .yaml, .properties files or system properties
+
+For getting notifications on each failed test include:
+
+`REPORTING_NOTIFICATION_NOTIFY_ON_EACH_FAILURE` using environment variable (e.g. `REPORTING_NOTIFICATION_NOTIFY_ON_EACH_FAILURE=true`)
+
+`reporting.notification.notify-on-each-failure` using .yaml, .properties files or system properties
+
 ## Contribution
 To check out the project and build from the source, do the following:
 ```
