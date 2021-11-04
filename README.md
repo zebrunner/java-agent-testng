@@ -16,7 +16,7 @@ Including the agent into your project is easy - just add the dependency to the b
 #### **Gradle**
 ```groovy
 dependencies {
-  testImplementation 'com.zebrunner:agent-testng:1.6.0'
+  testImplementation 'com.zebrunner:agent-testng:1.6.4'
 }
 ```
 
@@ -51,20 +51,34 @@ The following configuration parameters are recognized by the agent:
 - `REPORTING_ENABLED` - enables or disables reporting. The default value is `false`. If disabled, the agent will use no op component implementations that will simply log output for tracing purposes with the `trace` level;
 - `REPORTING_SERVER_HOSTNAME` - mandatory if reporting is enabled. It is Zebrunner server hostname. It can be obtained in Zebrunner on the 'Account & profile' page under the 'Service URL' section;
 - `REPORTING_SERVER_ACCESS_TOKEN` - mandatory if reporting is enabled. Access token must be used to perform API calls. It can be obtained in Zebrunner on the 'Account & profile' page under the 'Token' section;
-- `REPORTING_PROJECT_KEY` - optional value. It is the project that the test run belongs to. The default value is `UNKNOWN`. You can manage projects in Zebrunner in the appropriate section;
+- `REPORTING_PROJECT_KEY` - optional value. It is the project that the test run belongs to. The default value is `DEF`. You can manage projects in Zebrunner in the appropriate section;
 - `REPORTING_RUN_DISPLAY_NAME` - optional value. It is the display name of the test run. The default value is `Default Suite`;
 - `REPORTING_RUN_BUILD` - optional value. It is the build number that is associated with the test run. It can depict either the test build number or the application build number;
-- `REPORTING_RUN_ENVIRONMENT` - optional value. It is the environment where the tests will run.
+- `REPORTING_RUN_ENVIRONMENT` - optional value. It is the environment where the tests will run;
+- `REPORTING_RUN_RETRY_KNOWN_ISSUES` - optional value. If set to `false` and test failed with an issue previously occurred for the test method, then the agent will ignore results of the `IRetryAnalyzer` assigned to test and stop retries. The default value is `true`;
+- `REPORTING_NOTIFICATION_NOTIFY_ON_EACH_FAILURE` - optional value. Specifies whether Zebrunner should send notification to Slack/Teams on each test failure. The notifications will be sent even if the suite is still running. The default value is `false`;
+- `REPORTING_NOTIFICATION_SLACK_CHANNELS` - optional value. The list of comma-separated Slack channels to send notifications to. Notification will be sent only if Slack integration is properly configured in Zebrunner with valid credentials for the project the tests are reported to. Zebrunner can send two type of notifications: on each test failure (if appropriate property is enabled) and on suite finish;
+- `REPORTING_NOTIFICATION_MS_TEAMS_CHANNELS` - optional value. The list of comma-separated Microsoft Teams channels to send notifications to. Notification will be sent only if Teams integration is configured in Zebrunner project with valid webhooks for the channels. Zebrunner can send two type of notifications: on each test failure (if appropriate property is enabled) and on suite finish;
+- `REPORTING_NOTIFICATION_EMAILS` - optional value. The list of comma-separated emails to send notifications to. This type of notification does not require further configuration on Zebrunner side. Unlike other notification mechanisms, Zebrunner can send emails only on suite finish;
+- `REPORTING_MILESTONE_ID` - optional value. Id of the Zebrunner milestone to link the suite execution to. The id is not displayed on Zebrunner UI, so the field is basically used for internal purposes. If the milestone does not exist, appropriate warning message will be displayed in logs, but the test suite will continue executing;
+- `REPORTING_MILESTONE_NAME` - optional value. Name of the Zebrunner milestone to link the suite execution to. If the milestone does not exist, appropriate warning message will be displayed in logs, but the test suite will continue executing.
 
 ### Program arguments
 The following configuration parameters are recognized by the agent:
 - `reporting.enabled` - enables or disables reporting. The default value is `false`. If disabled, the agent will use no op component implementations that will simply log output for tracing purposes with the `trace` level;
 - `reporting.server.hostname` - mandatory if reporting is enabled. It is Zebrunner server hostname. It can be obtained in Zebrunner on the 'Account & profile' page under the 'Service URL' section;
 - `reporting.server.accessToken` - mandatory if reporting is enabled. Access token must be used to perform API calls. Can be obtained in Zebrunner on the 'Account & profile' page under the 'Token' section;
-- `reporting.projectKey` - optional value. The project that the test run belongs to. The default value is `UNKNOWN`. You can manage projects in Zebrunner in the appropriate section;
+- `reporting.projectKey` - optional value. The project that the test run belongs to. The default value is `DEF`. You can manage projects in Zebrunner in the appropriate section;
 - `reporting.run.displayName` - optional value. The display name of the test run. The default value is `Default Suite`;
 - `reporting.run.build` - optional value. The build number that is associated with the test run. It can depict either the test build number or the application build number;
 - `reporting.run.environment` - optional value. The environment in which the tests will run.
+- `reporting.run.retry-known-issues` - optional value. If set to `false` and test failed with an issue previously occurred for the test method, then the agent will ignore results of the `IRetryAnalyzer` assigned to test and stop retries. The default value is `true`;
+- `reporting.notification.notify-on-each-failure` - optional value. Specifies whether Zebrunner should send notification to Slack/Teams on each test failure. The notifications will be sent even if the suite is still running. The default value is `false`;
+- `reporting.notification.slack-channels` - optional value. The list of comma-separated Slack channels to send notifications to. Notification will be sent only if Slack integration is properly configured in Zebrunner with valid credentials for the project the tests are reported to. Zebrunner can send two type of notifications: on each test failure (if appropriate property is enabled) and on suite finish;
+- `reporting.notification.ms-teams-channels` - optional value. The list of comma-separated Microsoft Teams channels to send notifications to. Notification will be sent only if Teams integration is configured in Zebrunner project with valid webhooks for the channels. Zebrunner can send two type of notifications: on each test failure (if appropriate property is enabled) and on suite finish;
+- `reporting.notification.emails` - optional value. The list of comma-separated emails to send notifications to. This type of notification does not require further configuration on Zebrunner side. Unlike other notification mechanisms, Zebrunner can send emails only on suite finish;
+- `reporting.milestone.id` - optional value. Id of the Zebrunner milestone to link the suite execution to. The id is not displayed on Zebrunner UI, so the field is basically used for internal purposes. If the milestone does not exist, appropriate warning message will be displayed in logs, but the test suite will continue executing;
+- `reporting.milestone.name` - optional value. Name of the Zebrunner milestone to link the suite execution to. If the milestone does not exist, appropriate warning message will be displayed in logs, but the test suite will continue executing.
 
 ### YAML file
 Agent recognizes `agent.yaml` or `agent.yml` file in the resources root folder. It is currently not possible to configure an alternative file location.
@@ -73,22 +87,37 @@ Below is a sample configuration file:
 ```yaml
 reporting:
   enabled: true
-  project-key: UNKNOWN
+  project-key: WEB
   server:
-    hostname: localhost:8080
+    hostname: bestcompany.zebrunner.com
     access-token: <token>
   run:
     display-name: Nightly Regression Suite
-    build: 1.12.1.96-SNAPSHOT
+    build: 2.5.3.96-SNAPSHOT
     environment: TEST-1
+    retry-known-issues: false
+  notification:
+    notify-on-each-failure: true
+    slack-channels: automation, dev-team
+    ms-teams-channels: automation, qa-team
+    emails: boss@example.com
+  milestone:
+    name: Release 2.5.3
 ```
 - `reporting.enabled` - enables or disables reporting. The default value is `false`. If disabled, the agent will use no op component implementations that will simply log output for tracing purposes with the `trace` level;
 - `reporting.server.hostname` - mandatory if reporting is enabled. Zebrunner server hostname. Can be obtained in Zebrunner on the 'Account & profile' page under the 'Service URL' section;
 - `reporting.server.access-token` - mandatory if reporting is enabled. Access token must be used to perform API calls. Can be obtained in Zebrunner on the 'Account & profile' page under the 'Token' section;
-- `reporting.project-key` - optional value. The project that the test run belongs to. The default value is `UNKNOWN`. You can manage projects in Zebrunner in the appropriate section;
+- `reporting.project-key` - optional value. The project that the test run belongs to. The default value is `DEF`. You can manage projects in Zebrunner in the appropriate section;
 - `reporting.run.display-name` - optional value. The display name of the test run. The default value is `Default Suite`;
 - `reporting.run.build` - optional value. The build number that is associated with the test run. It can depict either the test build number or the application build number;
 - `reporting.run.environment` - optional value. The environment in which the tests will run.
+- `reporting.run.retry-known-issues` - optional value. If set to `false` and test failed with an issue previously occurred for the test method, then the agent will ignore results of the `IRetryAnalyzer` assigned to test and stop retries. The default value is `true`;
+- `reporting.notification.notify-on-each-failure` - optional value. Specifies whether Zebrunner should send notification to Slack/Teams on each test failure. The notifications will be sent even if the suite is still running. The default value is `false`;
+- `reporting.notification.slack-channels` - optional value. The list of comma-separated Slack channels to send notifications to. Notification will be sent only if Slack integration is properly configured in Zebrunner with valid credentials for the project the tests are reported to. Zebrunner can send two type of notifications: on each test failure (if appropriate property is enabled) and on suite finish;
+- `reporting.notification.ms-teams-channels` - optional value. The list of comma-separated Microsoft Teams channels to send notifications to. Notification will be sent only if Teams integration is configured in Zebrunner project with valid webhooks for the channels. Zebrunner can send two type of notifications: on each test failure (if appropriate property is enabled) and on suite finish;
+- `reporting.notification.emails` - optional value. The list of comma-separated emails to send notifications to. This type of notification does not require further configuration on Zebrunner side. Unlike other notification mechanisms, Zebrunner can send emails only on suite finish;
+- `reporting.milestone.id` - optional value. Id of the Zebrunner milestone to link the suite execution to. The id is not displayed on Zebrunner UI, so the field is basically used for internal purposes. If the milestone does not exist, appropriate warning message will be displayed in logs, but the test suite will continue executing;
+- `reporting.milestone.name` - optional value. Name of the Zebrunner milestone to link the suite execution to. If the milestone does not exist, appropriate warning message will be displayed in logs, but the test suite will continue executing.
 
 ### Properties file
 The agent recognizes only `agent.properties` file in the resources root folder. It is currently not possible to configure an alternative file location.
@@ -96,20 +125,33 @@ The agent recognizes only `agent.properties` file in the resources root folder. 
 Below is a sample configuration file:
 ```properties
 reporting.enabled=true
-reporting.project-key=UNKNOWN
-reporting.server.hostname=localhost:8080
+reporting.project-key=WEB
+reporting.server.hostname=bestcompany.zebrunner.com
 reporting.server.access-token=<token>
 reporting.run.display-name=Nightly Regression Suite
-reporting.run.build=1.12.1.96-SNAPSHOT
+reporting.run.build=2.5.3.96-SNAPSHOT
 reporting.run.environment=TEST-1
+reporting.run.retry-known-issues=false
+notification.notify-on-each-failure=true
+notification.slack-channels=automation, dev-team
+notification.ms-teams-channels=automation, qa-team
+notification.emails=boss@example.com
+milestone.name=Release 2.5.3
 ```
 - `reporting.enabled` - enables or disables reporting. The default value is `false`. If disabled, the agent will use no op component implementations that will simply log output for tracing purposes with the `trace` level;
 - `reporting.server.hostname` - mandatory if reporting is enabled. Zebrunner server hostname. Can be obtained in Zebrunner on the 'Account & profile' page under the 'Service URL' section;
 - `reporting.server.access-token` - mandatory if reporting is enabled. Access token must be used to perform API calls. Can be obtained in Zebrunner on the 'Account & profile' page under the 'Token' section;
-- `reporting.project-key` - optional value. The project that the test run belongs to. The default value is `UNKNOWN`. You can manage projects in Zebrunner in the appropriate section;
+- `reporting.project-key` - optional value. The project that the test run belongs to. The default value is `DEF`. You can manage projects in Zebrunner in the appropriate section;
 - `reporting.run.display-name` - optional value. The display name of the test run. The default value is `Default Suite`;
 - `reporting.run.build` - optional value. The build number that is associated with the test run. It can depict either the test build number or the application build number;
 - `reporting.run.environment` - optional value. The environment in which the tests will run.
+- `reporting.run.retry-known-issues` - optional value. If set to `false` and test failed with an issue previously occurred for the test method, then the agent will ignore results of the `IRetryAnalyzer` assigned to test and stop retries. The default value is `true`;
+- `reporting.notification.notify-on-each-failure` - optional value. Specifies whether Zebrunner should send notification to Slack/Teams on each test failure. The notifications will be sent even if the suite is still running. The default value is `false`;
+- `reporting.notification.slack-channels` - optional value. The list of comma-separated Slack channels to send notifications to. Notification will be sent only if Slack integration is properly configured in Zebrunner with valid credentials for the project the tests are reported to. Zebrunner can send two type of notifications: on each test failure (if appropriate property is enabled) and on suite finish;
+- `reporting.notification.ms-teams-channels` - optional value. The list of comma-separated Microsoft Teams channels to send notifications to. Notification will be sent only if Teams integration is configured in Zebrunner project with valid webhooks for the channels. Zebrunner can send two type of notifications: on each test failure (if appropriate property is enabled) and on suite finish;
+- `reporting.notification.emails` - optional value. The list of comma-separated emails to send notifications to. This type of notification does not require further configuration on Zebrunner side. Unlike other notification mechanisms, Zebrunner can send emails only on suite finish;
+- `reporting.milestone.id` - optional value. Id of the Zebrunner milestone to link the suite execution to. The id is not displayed on Zebrunner UI, so the field is basically used for internal purposes. If the milestone does not exist, appropriate warning message will be displayed in logs, but the test suite will continue executing;
+- `reporting.milestone.name` - optional value. Name of the Zebrunner milestone to link the suite execution to. If the milestone does not exist, appropriate warning message will be displayed in logs, but the test suite will continue executing.
 
 <!-- groups:end -->
 
@@ -393,17 +435,14 @@ In the example above, `kenobi` will be reported as a maintainer of `anotherAweso
 
 The maintainer username should be a valid Zebrunner username, otherwise it will be set to `anonymous`.
 
-### Attaching test labels
-In some cases, it may be useful to attach meta information related to a test - its Jira id, its priority, or any other useful data.
+### Attaching labels
+In some cases, it may be useful to attach some meta information related to a test.
 
-The agent comes with a concept of a label. Label is a key-value pair associated with a test. The key is represented by a `String`, the label value accepts a vararg of `Strings`. 
+The agent comes with a concept of labels. Label is a key-value pair associated with a test or test run. The key is represented by a `String`, the label value accepts a vararg of `Strings`.
 
-There is a bunch of annotations that can be used to attach a label to a test. All the annotations can be used on both class and method levels. It is also possible to override a class-level label on a method-level. There is one generic annotation, and a few bespoke ones that don't require a label name:
-- `@Priority`
-- `@JiraReference`
-- `@TestLabel` - the generic one.
+There is a repeatable `@TestLabel` annotation that can be used to attach labels to a test. The annotation can be used on both class and method levels and will attach labels to test. It is also possible to override a class-level label on a method-level.
 
-There is also a Java API to attach labels during test execution. The `Label` class has a static method that can be used to attach a label. 
+There is also a Java API to attach labels during test or execution. The `Label` class has static methods that can be used to attach labels.
 
 Here is a sample:
 ```java
@@ -416,20 +455,20 @@ import org.testng.annotations.Test;
 public class AwesomeTests {
 
     @Test
-    @Priority(Priority.P1)
-    @JiraReference("ZBR-1231")
+    @TestLabel(name = "feature", value = "labels")
     @TestLabel(name = "app", value = {"reporting-service:v1.0", "reporting-service:v1.1"})
     public void awesomeTest() {
         // some code here  
-        Label.attach("Chrome", "85.0");
+        Label.attachToTest("Chrome", "85.0");
+        Label.attachToTestRun("Author", "Deve Loper");
         // meaningful assertions
     }
 
 }
 ```
-The test from the sample above attaches 5 labels: 1 priority, 1 jira-reference, 2 'app' labels, 1 'Chrome' label.
+The test from the sample above attaches 4 test-level labels (2 `app` labels, 1 `feature` label, 1 `Chrome` label) and 1 run-level label (`Author`).
 
-The values of attached labels will be displayed in Zebrunner under the name of a corresponding test. The values of the `@JiraReference` annotation will be displayed in blue pills to the right of the test name.
+The values of attached labels will be displayed in Zebrunner under the name of a corresponding test or run.
 
 ### Reverting test registration
 In some cases it might be handy not to register test execution in Zebrunner. This may be caused by very special circumstances of test environment or execution conditions.
@@ -457,6 +496,255 @@ public class AwesomeTests {
 ```
 
 It is worth mentioning that the method invocation does not affect the test execution, but simply unregisters the test in Zebrunner. To interrupt the test execution, you need to do additional actions, for example, throw a `SkipException`.
+
+### Setting Test Run build at runtime
+All the configuration mechanisms listed above provide possibility to declaratively set test run build. But there might be cases when actual build becomes available only at runtime.
+
+For such cases Zebrunner agent has a special method that can be used at any moment of the suite execution:
+```java
+import com.zebrunner.agent.core.registrar.CurrentTestRun;
+import org.testng.annotations.Test;
+
+import java.time.DayOfWeek;
+import java.time.LocalDate;
+
+public class AwesomeTests {
+
+    @BeforeSuite
+    public void setUp() {
+        String build = resolveBuild();
+        CurrentTestRun.setBuild(build);
+    }
+
+    private String resolveBuild() {
+        // some code here
+    }
+
+}
+```
+
+In the above example, the `#setUp()` method on `@BeforeSuite` phase resolves and sets the test run build.
+
+### Setting Test Run locale
+If you want to get full reporting experience and collect as much information in Zebrunner as its possible, you may want to report the test run locale.
+
+For this, Zebrunner agent has a special method that can be used at any moment of the suite execution:
+```java
+import com.zebrunner.agent.core.registrar.CurrentTestRun;
+import org.testng.annotations.Test;
+
+import java.time.DayOfWeek;
+import java.time.LocalDate;
+
+public class AwesomeTests {
+
+    @BeforeSuite
+    public void setUp() {
+        String locale = resolveLocale();
+        CurrentTestRun.setBuild(locale);
+    }
+
+    private String resolveLocale() {
+        // some code here
+    }
+
+}
+```
+
+In the above example, the `#setUp()` method on `@BeforeSuite` phase resolves and sets the test run locale.
+
+### Overriding Test Run platform
+A test run in Zebrunner may have platform associated with the run. If there is at least one initiated `RemoteDriverSession` within the test run, then its platform will be displayed as a platform of the whole test run. Even if subsequent `RemoteDriverSession`s are initiated on another platform, the very first one will be displayed as the run platform.
+
+In some cases you may want to override the platform of the first `RemoteDriverSession`. Another problem is that it is not possible to specify `API` as a platform.
+
+Zebrunner provides two special methods to solve both of these problems: `CurrentTestRun.setPlatform(name)` and `CurrentTestRun.setPlatform(name, version)`.
+
+In the example below, the `#setUp()` method sets the API as a platform associated with the current test run.
+```java
+import com.zebrunner.agent.core.registrar.CurrentTestRun;
+import org.testng.annotations.Test;
+
+import java.time.DayOfWeek;
+import java.time.LocalDate;
+
+public class AwesomeTests {
+
+    @BeforeSuite
+    public void setUp() {
+        CurrentTestRun.setPlatform("API");
+    }
+
+}
+```
+
+### Upload test results to external test case management systems
+Zebrunner provides an ability to upload test results to external TCMs on test run finish. For some TCMs it is possible to upload results in real-time during the test run execution. 
+
+Currently, Zebrunner supports TestRail, Xray, Zephyr Squad and Zephyr Scale test case management systems.
+
+<!-- tabs:start -->
+
+#### Testrail
+
+For successful upload of test run results in TestRail, two steps must be performed:
+1) Integration with TestRail is configured and enabled for Zebrunner project;
+2) Configuration is performed on the tests side.
+
+##### Configuration
+
+Zebrunner agent has a special `TestRail` class with a bunch of methods to control results upload:
+- `#setSuiteId(String)` - mandatory. The method sets TestRail suite id for current test run. This method must be invoked before all tests. Thus, it should be invoked from `@BeforeSuite` method. If your suite is composed of multiple suites, you should invoke this method only for the first sub-suite;
+- `#setCaseId(String)` or `@TestRailCaseId(array of Strings)` - mandatory. Using these mechanisms you can set TestRail's case associated with specific automated test. It is highly recommended using the `@TestRailCaseId` annotation instead of static method invocation. Use the static method only for special cases;
+- `#disableSync()` - optional. Disables result upload. Same as `#setSuiteId(String)`, this method must be invoked before all tests;
+- `#includeAllTestCasesInNewRun()` - optional. Includes all cases from suite into newly created run in TestRail. Same as `#setSuiteId(String)`, this method must be invoked before all tests;
+- `#enableRealTimeSync()` - optional. Enables real-time results upload. In this mode, result of test execution will be uploaded immediately after test finish. This method also automatically invokes `#includeAllTestCasesInNewRun()`. Same as `#setSuiteId(String)`, this method must be invoked before all tests;
+- `#setRunId(String)` - optional. Adds result into existing TestRail run. If not provided, test run is treated as new. Same as `#setSuiteId(String)`, this method must be invoked before all tests;
+- `#setRunName(String)` - optional. Sets custom name for new TestRail run. By default, Zebrunner test run name is used. Same as `#setSuiteId(String)`, this method must be invoked before all tests;
+- `#setMilestone(String)` - optional. Adds result in TestRail milestone with the given name. Same as `#setSuiteId(String)`, this method must be invoked before all tests;
+- `#setAssignee(String)` - optional. Sets TestRail run assignee. Same as `#setSuiteId(String)`, this method must be invoked before all tests.
+
+By default, a new run containing only cases assigned to the tests will be created in TestRail on test run finish.
+
+##### Example
+
+In the example below, a new run with name "Best run ever" will be created in TestRail on test run finish. Suite id is `321` and assignee is "Deve Loper". Results of the `awesomeTest1` will be uploaded as result of cases with id `10000`, `10001`, `10002`. Results of the `awesomeTest2` will be uploaded as result of case with id `20000`. 
+
+```java
+import com.zebrunner.agent.core.annotation.TestRailCaseId;
+import com.zebrunner.agent.core.registrar.TestRail;
+import org.testng.annotations.BeforeSuite;
+import org.testng.annotations.Test;
+
+public class AwesomeTests {
+
+    @BeforeSuite
+    public void setUp() {
+        TestRail.setSuiteId("321");
+        TestRail.setRunName("Best run ever");
+        TestRail.setAssignee("Deve Loper");
+    }
+
+    @Test
+    @TestRailCaseId("10000")
+    @TestRailCaseId({"10001", "10002"})
+    public void awesomeTest1() {
+        // some code here
+    }
+
+    @Test
+    public void awesomeTest2() {
+        // some code here
+        TestRail.setCaseId("20000");
+        // meaningful assertions
+    }
+
+}
+```
+
+#### Xray
+
+For successful upload of test run results in Xray two steps must be performed:
+1) Xray integration is configured and enabled in Zebrunner project
+2) Xray configuration is performed on the tests side
+
+##### Configuration
+
+Zebrunner agent has a special `Xray` class with a bunch of methods to control results upload:
+- `#setExecutionKey(String)` - mandatory. The method sets Xray execution key. This method must be invoked before all tests. Thus, it should be invoked from `@BeforeSuite` method. If your suite is composed of multiple suites, you should invoke this method only for the first sub-suite;
+- `#setTestKey(String)` or `@XrayTestKey(array of Strings)` - mandatory. Using these mechanisms you can set test keys associated with specific automated test. It is highly recommended using the `@XrayTestKey` annotation instead of static method invocation. Use the static method only for special cases;
+- `#disableSync()` - optional. Disables result upload. Same as `#setExecutionKey(String)`, this method must be invoked before all tests;
+- `#enableRealTimeSync()` - optional. Enables real-time results upload. In this mode, result of test execution will be uploaded immediately after test finish. Same as `#setExecutionKey(String)`, this method must be invoked before all tests.
+
+By default, results will be uploaded to Xray on test run finish.
+
+##### Example
+
+In the example below, results will be uploaded to execution with key `ZBR-42`. Results of the `awesomeTest1` will be uploaded as result of tests with key `ZBR-10000`, `ZBR-10001`, `ZBR-10002`. Results of the `awesomeTest2` will be uploaded as result of test with key `ZBR-20000`.
+
+```java
+import com.zebrunner.agent.core.annotation.TestRailCaseId;
+import com.zebrunner.agent.core.registrar.Xray;
+import org.testng.annotations.BeforeSuite;
+import org.testng.annotations.Test;
+
+public class AwesomeTests {
+
+    @BeforeSuite
+    public void setUp() {
+        Xray.setExecutionKey("ZBR-42");
+    }
+
+    @Test
+    @XrayTestKey("ZBR-10000")
+    @XrayTestKey({"ZBR-10001", "ZBR-10002"})
+    public void awesomeTest1() {
+        // some code here
+    }
+
+    @Test
+    public void awesomeTest2() {
+        // some code here
+        Xray.setTestKey("ZBR-20000");
+        // meaningful assertions
+    }
+
+}
+```
+
+#### Zephyr Squad & Zephyr Scale
+
+For successful upload of test run results in Zephyr two steps must be performed:
+1) Zephyr integration is configured and enabled in Zebrunner project
+2) Zephyr configuration is performed on the tests side
+
+##### Configuration
+
+Zebrunner agent has a special `Zephyr` class with a bunch of methods to control results upload:
+- `#setTestCycleKey(String)` - mandatory. The method sets Zephyr test cycle key. This method must be invoked before all tests. Thus, it should be invoked from `@BeforeSuite` method. If your suite is composed of multiple suites, you should invoke this method only for the first sub-suite;
+- `#setJiraProjectKey(String)` - mandatory. Sets Zephyr Jira project key. Same as `#setTestCycleKey(String)`, this method must be invoked before all tests;
+- `#setTestCaseKey(String)` or `@ZephyrTestCaseKey(array of Strings)` - mandatory. Using these mechanisms you can set test case keys associated with specific automated test. It is highly recommended using the `@ZephyrTestCaseKey` annotation instead of static method invocation. Use the static method only for special cases;
+- `#disableSync()` - optional. Disables result upload. Same as `#setTestCycleKey(String)`, this method must be invoked before all tests;
+- `#enableRealTimeSync()` - optional. Enables real-time results upload. In this mode, result of test execution will be uploaded immediately after test finish. Same as `#setTestCycleKey(String)`, this method must be invoked before all tests.
+
+By default, results will be uploaded to Zephyr on test run finish.
+
+##### Example
+
+In the example below, results will be uploaded to test cycle with key `ZBR-R42` from project with key `ZBR`. Results of the `awesomeTest1` will be uploaded as result of tests with key `ZBR-T10000`, `ZBR-T10001`, `ZBR-T10002`. Results of the `awesomeTest2` will be uploaded as result of test with key `ZBR-T20000`.
+
+```java
+import com.zebrunner.agent.core.annotation.TestRailCaseId;
+import com.zebrunner.agent.core.registrar.Zephyr;
+import org.testng.annotations.BeforeSuite;
+import org.testng.annotations.Test;
+
+public class AwesomeTests {
+
+    @BeforeSuite
+    public void setUp() {
+        Zephyr.setTestCycleKey("ZBR-R42");
+        Zephyr.setJiraProjectKey("ZBR");
+    }
+
+    @Test
+    @ZephyrTestCaseKey("ZBR-T10000")
+    @ZephyrTestCaseKey({"ZBR-T10001", "ZBR-T10002"})
+    public void awesomeTest1() {
+        // some code here
+    }
+
+    @Test
+    public void awesomeTest2() {
+        // some code here
+        Zephyr.setTestCaseKey("ZBR-T20000");
+        // meaningful assertions
+    }
+
+}
+```
+
+<!-- tabs:end -->
 
 ## Tracking of web driver sessions
 The Zebrunner test agent has a great ability to track tests along with remote driver sessions. After providing additional configuration, the agent captures all events of `RemoteDriverSession` instances (or instances of its subclasses) and reports them to Zebrunner.
@@ -517,26 +805,28 @@ The `maven-surefire-plugin` provides the ability to add VM arguments in a conven
 The `maven-dependency-plugin` can be used to obtain the absolute path to a project's dependency. The `properties` goal of this plugin supplies a set of properties with paths to all project dependencies. If your project is already using the `maven-dependency-plugin`, this is the best way to go.
 
 ```xml
-<plugin>
-    <groupId>org.apache.maven.plugins</groupId>
-    <artifactId>maven-dependency-plugin</artifactId>
-    <version>3.1.2</version>
-    <executions>
-        <execution>
-            <goals>
-                <goal>properties</goal>
-            </goals>
-        </execution>
-    </executions>
-</plugin>
-<plugin>
-    <groupId>org.apache.maven.plugins</groupId>
-    <artifactId>maven-surefire-plugin</artifactId>
-    <version>3.0.0-M4</version>
-    <configuration>
-        <argLine>-javaagent:${com.zebrunner:agent-core:jar}</argLine>
-    </configuration>
-</plugin>
+<plugins>
+    <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <version>3.1.2</version>
+        <executions>
+            <execution>
+                <goals>
+                    <goal>properties</goal>
+                </goals>
+            </execution>
+        </executions>
+    </plugin>
+    <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>3.0.0-M4</version>
+        <configuration>
+            <argLine>-javaagent:${com.zebrunner:agent-core:jar}</argLine>
+        </configuration>
+    </plugin>
+</plugins>
 ```
 
 The `${com.zebrunner:agent-core:jar}` property is generated by the `maven-dependency-plugin` during the initialization phase. Maven automatically sets the generated value when `maven-surefire-plugin` launches tests.
@@ -547,33 +837,36 @@ The `maven-surefire-plugin` provides the ability to add VM arguments in a conven
 The `maven-antrun-plugin` can be used to obtain the absolute path to a project dependency. If your project is already using the `maven-antrun-plugin`, this is the best way to go.
 
 ```xml
-<plugin>
-    <groupId>org.apache.maven.plugins</groupId>
-    <artifactId>maven-antrun-plugin</artifactId>
-    <version>1.8</version>
-    <executions>
-        <execution>
-            <phase>initialize</phase>
-            <configuration>
-                <exportAntProperties>true</exportAntProperties>
-                <tasks>
-                    <basename file="${maven.dependency.com.zebrunner.agent-core.jar.path}" property="com.zebrunner:agent-core:jar"/>
-                </tasks>
-            </configuration>
-            <goals>
-                <goal>run</goal>
-            </goals>
-        </execution>
-    </executions>
-</plugin>
-<plugin>
-    <groupId>org.apache.maven.plugins</groupId>
-    <artifactId>maven-surefire-plugin</artifactId>
-    <version>3.0.0-M4</version>
-    <configuration>
-        <argLine>-javaagent:${com.zebrunner:agent-core:jar}</argLine>
-    </configuration>
-</plugin>
+<plugins>
+    <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-antrun-plugin</artifactId>
+        <version>1.8</version>
+        <executions>
+            <execution>
+                <phase>initialize</phase>
+                <configuration>
+                    <exportAntProperties>true</exportAntProperties>
+                    <tasks>
+                        <basename file="${maven.dependency.com.zebrunner.agent-core.jar.path}"
+                                  property="com.zebrunner:agent-core:jar"/>
+                    </tasks>
+                </configuration>
+                <goals>
+                    <goal>run</goal>
+                </goals>
+            </execution>
+        </executions>
+    </plugin>
+    <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>3.0.0-M4</version>
+        <configuration>
+            <argLine>-javaagent:${com.zebrunner:agent-core:jar}</argLine>
+        </configuration>
+    </plugin>
+</plugins>
 ```
 
 The `${com.zebrunner:agent-core:jar}` property is generated by the `maven-antrun-plugin` during the initialization phase. Maven automatically sets the generated value when `maven-surefire-plugin` launches tests.
@@ -667,7 +960,7 @@ Zebrunner supports 3 types of test session artifacts:
 - Session log
 - VNC streaming
 
-Test agent itself does not capture those artifacts since it has no control over underlying Selenium Hub or MCloud implementation, however, it is possible to attach appropriate artifact references by providing specially designed set of driver session capabilities (**enabling capabilities**) - see the table below for more details. Only the `true` value for those is considered as trigger to save the link.
+Test agent itself does not capture those artifacts since it has no control over underlying Selenium Hub or MCloud implementation, however, it is possible to attach appropriate artifact references by providing specially designed set of driver session capabilities (**enabling capabilities**) - see the table below for more details. Only the `true` value is considered as trigger to save the link.
 
 | Artifact        | Display name | Enabling capability | Default reference                                  | Reference overriding capability |
 | --------------- | ------------ | ------------------- | -------------------------------------------------- | ------------------------------- |
@@ -731,165 +1024,7 @@ public class WebDriverManager {
 
 }
 ```
-### Integration with test case management tools
 
-For now Zebrunner supports TestRail, Xray and Zephyr Scale test case management tools.
-
-### Testrail
-
-For successful upload of test run results in TestRail two steps must be performed:
-
-1) TestRail integration is configured and enabled in Zebrunner project
-2) TestRail configuration is performed on the agent side
-
-
-**Mandatory configuration:**
-
-For test run:
-
-- Set TestRail suite id
-```java
-TestRail.setSuiteId("12");
-```
-
-For test:
-
-- Set TestRail case id
-```java
-TestRail.setCaseId("356");
-```
-or via annotation
-```java
-@TestRailCaseId({"356", "357"})
-```
-
-By default, new run (containing only cases added to tests) will be created in TestRail on test run finish.
-
-**Optional configuration:**
-
-For test run:
-
-- Disable results upload in TestRail
-```java
-TestRail.disableSync();
-```
-- Enable real-time (per test) results upload in TestRail
-```java
-TestRail.enableRealTimeSync();
-```
-- Include all cases from suite into newly created run in TestRail
-```java
-TestRail.includeAllTestCasesInNewRun();
-```
-
-- Add results into existing TestRail run (if not provided, test run is treated as new)
-```java
-TestRail.setRunId("12");
-```
-
-- Set custom name for new TestRail run (by default used Zebrunner test run name)
-```java
-TestRail.setRunName("Cool customized test run name");
-```
-- Add results in TestRail milestone with provided name
-```java
-TestRail.setMilestone("Megamilestone");
-```
-- Set TestRail run assignee
-```java
-TestRail.setAssignee("useruser@anymail.com");
-```
-
-### Xray
-
-For successful upload of test run results in Xray two steps must be performed:
-
-1) Xray integration is configured and enabled in Zebrunner project
-2) Xray configuration is performed on the agent side
-
-
-**Mandatory configuration:**
-
-For test run:
-
-- Set Xray execution key
-```java
-Xray.setExecutionKey("FSK-23");
-```
-
-For test:
-
-- Set Xray test key
-```java
-Xray.setTestKey("FSK-356");
-```
-or via annotation
-```java
-@XrayTestKey({"FSK-357", "FSK-358"})
-```
-
-By default, results will be uploded to Xray on test run finish.
-
-**Optional configuration:**
-
-For test run:
-
-- Disable results upload in Xray
-```java
-Xray.disableSync();
-```
-- Enable real-time (per test) results upload in Xray
-```java
-Xray.enableRealTimeSync();
-```
-
-### Zephyr Scale
-
-For successful upload of test run results in Zephyr two steps must be performed:
-
-1) Zephyr integration is configured and enabled in Zebrunner project
-2) Zephyr configuration is performed on the agent side
-
-
-**Mandatory configuration:**
-
-For test run:
-
-- Set Zephyr test cycle key
-```java
-Zephyr.setTestCycleKey("QAP-R1");
-```
-
-- Set Zephyr Jira project key
-```java
-Zephyr.setJiraProjectKey("QAP");
-```
-
-For test:
-
-- Set Zephyr test case key
-```java
-Zephyr.setTestCaseKey("QAP-T4");
-```
-or via annotation
-```java
-@ZephyrTestCaseKey({"QAP-T5", "QAP-T6"})
-```
-
-By default, results will be uploded to Zephyr on test run finish.
-
-**Optional configuration:**
-
-For test run:
-
-- Disable results upload in Zephyr
-```java
-Zephyr.disableSync();
-```
-- Enable real-time (per test) results upload in Zephyr
-```java
-Zephyr.enableRealTimeSync();
-```
 ## Contribution
 To check out the project and build from the source, do the following:
 ```
