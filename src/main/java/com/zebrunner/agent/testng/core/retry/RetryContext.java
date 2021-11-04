@@ -5,6 +5,7 @@ import lombok.Setter;
 import org.testng.IRetryAnalyzer;
 
 import java.util.Map;
+import java.util.Optional;
 
 @Getter
 @Setter
@@ -19,5 +20,13 @@ public class RetryContext {
      * Key is a parameter index (if data provider)
      */
     private Map<Integer, RetryItemContext> retryItemContexts;
+
+    @Override
+    public String toString() {
+        return "RetryContext{" +
+                "originalRetryAnalyzerClass=" + Optional.ofNullable(originalRetryAnalyzerClass).map(Class::getName).orElse("--") +
+                ", retryItemContexts=" + retryItemContexts +
+                '}';
+    }
 
 }

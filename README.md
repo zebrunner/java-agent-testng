@@ -25,7 +25,7 @@ dependencies {
 <dependency>
   <groupId>com.zebrunner</groupId>
   <artifactId>agent-testng</artifactId>
-  <version>1.6.0</version>
+  <version>RELEASE</version>
   <scope>test</scope>
 </dependency>
 ```
