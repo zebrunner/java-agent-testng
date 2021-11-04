@@ -29,6 +29,7 @@ public class RootXmlSuiteConfigurationProvider implements ConfigurationProvider 
                                              null, null, null, null, null
                                      ))
                                      .notification(new ReportingConfiguration.NotificationConfiguration(
+                                             null,
                                              rootXmlSuite.getParameter(NOTIFICATION_SLACK_CHANNELS_PARAMETER),
                                              rootXmlSuite.getParameter(NOTIFICATION_MS_TEAMS_PARAMETER),
                                              rootXmlSuite.getParameter(NOTIFICATION_EMAILS_PARAMETER)

@@ -16,7 +16,6 @@ import com.zebrunner.agent.testng.core.RootXmlSuiteLabelAssigner;
 import com.zebrunner.agent.testng.core.TestInvocationContext;
 import com.zebrunner.agent.testng.core.config.RootXmlSuiteConfigurationProvider;
 import com.zebrunner.agent.testng.core.maintainer.RootXmlSuiteMaintainerResolver;
-import com.zebrunner.agent.testng.core.testname.TestNameResolver;
 import com.zebrunner.agent.testng.core.testname.TestNameResolverRegistry;
 import com.zebrunner.agent.testng.listener.RetryService;
 import com.zebrunner.agent.testng.listener.RunContextService;
@@ -131,16 +130,21 @@ public class TestNGAdapter {
     }
 
     private TestStartDescriptor buildTestStartDescriptor(String correlationData, ITestResult testResult) {
-        long startedAtMillis = testResult.getStartMillis();
-        OffsetDateTime startedAt = ofMillis(startedAtMillis);
+        ITestNGMethod testMethod = testResult.getMethod();
+        ITestContext context = testResult.getTestContext();
+        Object[] parameters = testResult.getParameters();
 
-        Method method = testResult.getMethod().getConstructorOrMethod().getMethod();
+        String displayName = TestNameResolverRegistry.get().resolve(testResult);
+        OffsetDateTime startedAt = ofMillis(testResult.getStartMillis());
         Class<?> realClass = testResult.getTestClass().getRealClass();
+        Method method = testMethod.getConstructorOrMethod().getMethod();
 
-        TestNameResolver testNameResolver = TestNameResolverRegistry.get();
-        String displayName = testNameResolver.resolve(testResult);
+        Integer dataProviderIndex = RunContextService.getCurrentDataProviderIndex(testMethod, context, parameters);
+        if (dataProviderIndex == -1) {
+            dataProviderIndex = null;
+        }
 
-        return new TestStartDescriptor(correlationData, displayName, startedAt, realClass, method);
+        return new TestStartDescriptor(correlationData, displayName, startedAt, realClass, method, dataProviderIndex);
     }
 
     public void registerTestFinish(ITestResult testResult) {
