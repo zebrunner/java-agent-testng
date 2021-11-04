@@ -554,9 +554,9 @@ public class AwesomeTests {
 In the above example, the `#setUp()` method on `@BeforeSuite` phase resolves and sets the test run locale.
 
 ### Overriding Test Run platform
-A test run in Zebrunner may have platform associated with the run. If there is at least one initiated `RemoteDriverSession` within the test run, then its platform will be displayed as a platform of the whole test run. Even if subsequent `RemoteDriverSession`s are initiated on another platform, the very first one will be displayed as the run platform.
+A test run in Zebrunner can have a platform associated with the run. If there is at least one initiated `RemoteDriverSession` within the test run, its platform will be used as a platform of the test run. Even if subsequent `RemoteDriverSession`s are initiated on a different platform, the very first one will be used as the run platform.
 
-In some cases you may want to override the platform of the first `RemoteDriverSession`. Another problem is that it is not possible to specify `API` as a platform.
+In some cases you may want to override the platform used as the test run platform. Another problem is that it is not possible to specify `API` as a platform.
 
 Zebrunner provides two special methods to solve both of these problems: `CurrentTestRun.setPlatform(name)` and `CurrentTestRun.setPlatform(name, version)`.
 
