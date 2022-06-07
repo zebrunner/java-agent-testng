@@ -1,6 +1,5 @@
 package com.zebrunner.agent.testng.listener;
 
-import com.google.common.collect.Lists;
 import com.zebrunner.agent.core.registrar.RerunContextHolder;
 import lombok.RequiredArgsConstructor;
 import org.testng.IDataProviderInterceptor;
@@ -25,7 +24,7 @@ public class DataProviderInterceptor implements IDataProviderInterceptor {
         if (original instanceof TrackableIterator) {
             return original;
         } else {
-            List<Object[]> dataProviderData = Lists.newArrayList(original);
+            List<Object[]> dataProviderData = this.toArrayList(original);
             RunContextService.setDataProviderData(method, context, dataProviderData);
 
             if (RerunContextHolder.isRerun()) {
@@ -37,6 +36,14 @@ public class DataProviderInterceptor implements IDataProviderInterceptor {
 
             return new TrackableIterator(dataProviderData.iterator(), method, context);
         }
+    }
+
+    private <T> List<T> toArrayList(Iterator<T> iterator) {
+        List<T> list = new ArrayList<>();
+        while (iterator.hasNext()) {
+            list.add(iterator.next());
+        }
+        return list;
     }
 
     private static List<Object[]> filterDataProviderData(List<Object[]> dataProviderData, List<Integer> indicesForRerun) {
