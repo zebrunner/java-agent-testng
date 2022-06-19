@@ -3,11 +3,10 @@ The official Zebrunner TestNG agent provides reporting and smart reruns function
 
 > **Carina support**
 > 
-> Since Carina is a TestNG-based automation framework all steps described in this doc for TestNG are valid for Carina as well.
+> Since Carina is a TestNG-based automation framework, all steps described in this doc for TestNG are valid for Carina as well.
 > Official Carina documentation can be found [here](https://zebrunner.github.io/carina/).
 
 ## Inclusion into your project 
-The agent comes bundled with TestNG 7.3.0, so you should comment out or exclude your TestNG dependency from the project. If you are using a version of TestNG below 7.3.0, we cannot guarantee the correct functionality of the agent.
 
 Including the agent into your project is easy - just add the dependency to the build descriptor.
 
@@ -31,6 +30,15 @@ dependencies {
 ```
 
 <!-- tabs:end -->
+
+The following table shows compatibility matrix between Zebrunner Agent and the specific versions of TestNG.
+
+| Agent version | Compatible TestNG versions |
+|---------------|----------------------------|
+| `1.7.*`       | `7.5`                      |
+| `1.6.*`       | `7.3.0`, `7.4.0`           |
+
+Zebrunner TestNG Agent is tightly coupled to specific versions of TestNG framework. We cannot guarantee that a particular version of the agent will work correctly with a version of TestNG other than the one listed in the table. The latest version of the agent comes bundled with TestNG 7.5.
 
 ## Tracking of test results
 Once the agent is available on the classpath of your test project, it is **not** automatically enabled. The valid configuration must be provided.
@@ -261,8 +269,9 @@ Add log4j2 (and, optionally, slf4j) dependency to your build descriptor:
 ```groovy
 dependencies {
   implementation 'org.slf4j:slf4j-api:1.7.30'
-  implementation 'org.apache.logging.log4j:log4j-api:2.13.3'
-  implementation 'org.apache.logging.log4j:log4j-core:2.13.3'
+  implementation 'org.apache.logging.log4j:log4j-api:2.17.2'
+  implementation 'org.apache.logging.log4j:log4j-core:2.17.2'
+  implementation 'org.apache.logging.log4j:log4j-slf4j-impl:2.17.2'
 }
 ```
 #### **Maven**
@@ -271,17 +280,22 @@ dependencies {
     <dependency>
         <groupId>org.slf4j</groupId>
         <artifactId>slf4j-api</artifactId>
-        <version>1.7.30</version>
+        <version>1.7.36</version>
     </dependency>
     <dependency>
         <groupId>org.apache.logging.log4j</groupId>
         <artifactId>log4j-api</artifactId>
-        <version>2.13.3</version>
+        <version>2.17.2</version>
     </dependency>
     <dependency>
         <groupId>org.apache.logging.log4j</groupId>
         <artifactId>log4j-core</artifactId>
-        <version>2.13.3</version>
+        <version>2.17.2</version>
+    </dependency>
+    <dependency>
+        <groupId>org.apache.logging.log4j</groupId>
+        <artifactId>log4j-slf4j-impl</artifactId>
+        <version>2.17.2</version>
     </dependency>
 </dependencies>
 ```
@@ -296,13 +310,13 @@ Add logging appender to `log4j2.xml` file. Feel free to customize the logging pa
       <property name="pattern">[%d{HH:mm:ss}] %-5p (%F:%L) - %m%n</property>
    </properties>
    <appenders>
-      <ZebrunnerAppender name="ZebrunnerAppender">
+      <ReportingAppender name="ReportingAppender">
          <PatternLayout pattern="${pattern}" />
-      </ZebrunnerAppender>
+      </ReportingAppender>
    </appenders>
    <loggers>
       <root level="info">
-         <appender-ref ref="ZebrunnerAppender"/>
+         <appender-ref ref="ReportingAppender"/>
       </root>
    </loggers>
 </configuration>
@@ -541,7 +555,7 @@ public class AwesomeTests {
     @BeforeSuite
     public void setUp() {
         String locale = resolveLocale();
-        CurrentTestRun.setBuild(locale);
+        CurrentTestRun.setLocale(locale);
     }
 
     private String resolveLocale() {
