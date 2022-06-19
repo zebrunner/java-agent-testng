@@ -3,9 +3,9 @@ plugins {
 }
 
 group = 'com.zebrunner'
-version = "${version != 'unspecified' ? version : '1.0-SNAPSHOT'}"
+version = "${version != 'unspecified' ? version : '1.7.0'}"
 
-ext.coreVersion = project.properties['core.version'] ?: '1.0-SNAPSHOT'
+ext.coreVersion = project.properties['core.version'] ?: '1.7.0'
 
 sourceSets {
     main {
