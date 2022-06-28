@@ -2,6 +2,7 @@ package com.zebrunner.agent.testng.listener;
 
 import com.zebrunner.agent.core.registrar.RerunContextHolder;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.testng.IDataProviderInterceptor;
 import org.testng.IDataProviderMethod;
 import org.testng.ITestContext;
@@ -11,6 +12,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+@Slf4j
 public class DataProviderInterceptor implements IDataProviderInterceptor {
 
     @Override
@@ -18,8 +20,9 @@ public class DataProviderInterceptor implements IDataProviderInterceptor {
                                         IDataProviderMethod dataProviderMethod,
                                         ITestNGMethod method,
                                         ITestContext context) {
+        log.debug("Injecting DataProviderInterceptor -> intercept");
         // there is an issue with TestNG that in some cases
-        // a IDataProviderInterceptor instance can be registered and invoked two or more tiles in a row.
+        // a IDataProviderInterceptor instance can be registered and invoked two or more times in a row.
         // in order to not perform filtration many times, we check type of the original iterator here
         if (original instanceof TrackableIterator) {
             return original;

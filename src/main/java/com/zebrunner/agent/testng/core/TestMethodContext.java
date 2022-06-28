@@ -7,8 +7,10 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 /**
  * Stores context of specific test method (not to be confused with specific test execution) belonging to specific test class instance
@@ -54,7 +56,9 @@ public class TestMethodContext {
                    // the test method arguments or their values
                    .orElseGet(() -> this.getReferenceEqualDataProviderData(actualTestParameters)
                                         .orElseGet(() -> this.getValueEqualDataProviderData(actualTestParameters)
-                                                             .orElse(-1))
+                                                             .orElseGet(() -> this.getStringSameDataProviderData(actualTestParameters)
+                                                                                  .orElse(-1))
+                                        )
                    );
     }
 
@@ -87,6 +91,25 @@ public class TestMethodContext {
             }
         }
         return Optional.empty();
+    }
+
+    public Optional<Integer> getStringSameDataProviderData(Object[] data) {
+        List<String> dataAsList = this.toStringsList(data);
+
+        for (int i = 0; i < dataProviderData.size(); i++) {
+            List<String> dataProviderLineAsList = this.toStringsList(dataProviderData.get(i));
+
+            if (dataProviderLineAsList.equals(dataAsList)) {
+                return Optional.of(i);
+            }
+        }
+        return Optional.empty();
+    }
+
+    private List<String> toStringsList(Object[] data) {
+        return Arrays.stream(data)
+                     .map(Objects::toString)
+                     .collect(Collectors.toList());
     }
 
     public void incrementInvocationIndex() {
