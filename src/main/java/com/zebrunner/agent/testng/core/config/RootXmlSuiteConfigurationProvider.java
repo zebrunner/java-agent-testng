@@ -26,7 +26,7 @@ public class RootXmlSuiteConfigurationProvider implements ConfigurationProvider 
                                      .projectKey(rootXmlSuite.getParameter(PROJECT_KEY_PARAMETER))
                                      .run(new ReportingConfiguration.RunConfiguration(
                                              rootXmlSuite.getParameter(RUN_DISPLAY_NAME_PARAMETER),
-                                             null, null, null, null, null,
+                                             null, null, null, null, null, null,
                                              new ReportingConfiguration.RunConfiguration.TestCaseStatus()
                                      ))
                                      .notification(new ReportingConfiguration.NotificationConfiguration(
