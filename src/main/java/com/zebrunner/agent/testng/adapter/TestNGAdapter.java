@@ -2,7 +2,7 @@ package com.zebrunner.agent.testng.adapter;
 
 import com.zebrunner.agent.core.config.ConfigurationHolder;
 import com.zebrunner.agent.core.config.provider.SystemPropertiesConfigurationProvider;
-import com.zebrunner.agent.core.registrar.RerunContextHolder;
+import com.zebrunner.agent.core.registrar.RunContextHolder;
 import com.zebrunner.agent.core.registrar.TestRunRegistrar;
 import com.zebrunner.agent.core.registrar.descriptor.Status;
 import com.zebrunner.agent.core.registrar.descriptor.TestFinishDescriptor;
@@ -118,7 +118,7 @@ public class TestNGAdapter {
     }
 
     private void setZebrunnerTestIdOnRerun(ITestResult testResult, ITestNGMethod testMethod, TestStartDescriptor testStartDescriptor) {
-        if (RerunContextHolder.isRerun()) {
+        if (RunContextHolder.isRerun()) {
             ITestContext context = testResult.getTestContext();
             Object[] parameters = testResult.getParameters();
 

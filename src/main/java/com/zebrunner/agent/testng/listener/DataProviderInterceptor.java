@@ -1,6 +1,6 @@
 package com.zebrunner.agent.testng.listener;
 
-import com.zebrunner.agent.core.registrar.RerunContextHolder;
+import com.zebrunner.agent.core.registrar.RunContextHolder;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.testng.IDataProviderInterceptor;
@@ -30,7 +30,7 @@ public class DataProviderInterceptor implements IDataProviderInterceptor {
             List<Object[]> dataProviderData = this.toArrayList(original);
             RunContextService.setDataProviderData(method, context, dataProviderData);
 
-            if (RerunContextHolder.isRerun()) {
+            if (RunContextHolder.isRerun()) {
                 List<Integer> indicesForRerun = RunContextService.getDataProviderIndicesForRerun(method, context);
                 if (!indicesForRerun.isEmpty()) {
                     dataProviderData = filterDataProviderData(dataProviderData, indicesForRerun);
