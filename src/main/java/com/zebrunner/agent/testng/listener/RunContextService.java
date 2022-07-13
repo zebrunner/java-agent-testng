@@ -16,15 +16,24 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class RunContextService {
 
-    private static Map<TestInvocationContext, Long> invocationContextToTestIds = Collections.emptyMap();
+    private static final Map<TestInvocationContext, Long> INVOCATION_CONTEXT_TO_TEST_IDS = new ConcurrentHashMap<>();
 
-    static void setInvocationContextToTestIds(Map<TestInvocationContext, Long> invocationContextToTestIds) {
-        RunContextService.invocationContextToTestIds = invocationContextToTestIds;
+    static int countInvocationContexts() {
+        return INVOCATION_CONTEXT_TO_TEST_IDS.size();
+    }
+
+    static void addInvocationContexts(Map<TestInvocationContext, Long> contexts) {
+        contexts.entrySet()
+                .stream()
+                // filter out tests without invocation context
+                .filter(contextToTestId -> Objects.nonNull(contextToTestId.getKey()))
+                .forEach(contextToTestId -> RunContextService.INVOCATION_CONTEXT_TO_TEST_IDS.putIfAbsent(contextToTestId.getKey(), contextToTestId.getValue()));
     }
 
     public static void incrementMethodInvocationIndex(ITestNGMethod method, ITestContext context) {
@@ -114,23 +123,30 @@ public class RunContextService {
      * @return list of test execution contexts that are eligible for rerun
      */
     public static List<TestInvocationContext> findInvocationsForRerun(ITestNGMethod method) {
-        return invocationContextToTestIds.keySet()
-                                         .stream()
-                                         .filter(Objects::nonNull)
-                                         .filter(context -> belongsToMethod(context, method))
-                                         .filter(context -> belongsToTheSameFactoryInstance(context, method))
-                                         .collect(Collectors.toList());
+        return INVOCATION_CONTEXT_TO_TEST_IDS.keySet()
+                                             .stream()
+                                             .filter(Objects::nonNull)
+                                             .filter(context -> belongsToMethod(context, method))
+                                             .filter(context -> belongsToTheSameFactoryInstance(context, method))
+                                             .collect(Collectors.toList());
     }
 
     public static Optional<Long> getZebrunnerTestIdOnRerun(ITestNGMethod method, Integer dataProviderIndex) {
-        return invocationContextToTestIds.keySet()
-                                         .stream()
-                                         .filter(Objects::nonNull)
-                                         .filter(context -> belongsToMethod(context, method))
-                                         .filter(context -> belongsToTheSameFactoryInstance(context, method))
-                                         .filter(context -> context.getDataProviderIndex() == dataProviderIndex)
-                                         .map(invocationContextToTestIds::get)
-                                         .findFirst();
+        return INVOCATION_CONTEXT_TO_TEST_IDS.keySet()
+                                             .stream()
+                                             .filter(Objects::nonNull)
+                                             .filter(context -> belongsToMethod(context, method))
+                                             .filter(context -> belongsToTheSameFactoryInstance(context, method))
+                                             .filter(context -> context.getDataProviderIndex() == dataProviderIndex)
+                                             .map(INVOCATION_CONTEXT_TO_TEST_IDS::get)
+                                             .findFirst();
+    }
+
+    public static boolean isEligibleForRerun(ITestNGMethod method) {
+        return INVOCATION_CONTEXT_TO_TEST_IDS.keySet()
+                                             .stream()
+                                             .filter(Objects::nonNull)
+                                             .anyMatch(context -> belongsToMethod(context, method) && belongsToTheSameFactoryInstance(context, method));
     }
 
     /**
