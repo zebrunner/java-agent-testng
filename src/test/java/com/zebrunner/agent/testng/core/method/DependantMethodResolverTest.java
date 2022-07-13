@@ -11,6 +11,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static com.zebrunner.agent.testng.CollectionUtils.setOf;
 import static java.util.Collections.emptySet;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -78,29 +79,29 @@ class DependantMethodResolverTest {
 
     private static Stream<Arguments> provideMethodsTreeWithOnlyDependantMethods() {
         IMethodInstance rootLevelMethod = mockIMethodInstance(
-                "rootLevelMethod", emptySet(), Set.of("DT11", "DT12", "DT13"), emptySet()
+                "rootLevelMethod", emptySet(), setOf("DT11", "DT12", "DT13"), emptySet()
         );
-        Set<IMethodInstance> dependantMethods = Set.of(
+        Set<IMethodInstance> dependantMethods = setOf(
                 // DT - dependant test, first number - tree level
-                mockIMethodInstance("DT11", emptySet(), Set.of("DT21", "DT22"), emptySet()),
-                mockIMethodInstance("DT12", emptySet(), Set.of("DT23"), emptySet()),
-                mockIMethodInstance("DT13", emptySet(), Set.of("DT24"), emptySet()),
+                mockIMethodInstance("DT11", emptySet(), setOf("DT21", "DT22"), emptySet()),
+                mockIMethodInstance("DT12", emptySet(), setOf("DT23"), emptySet()),
+                mockIMethodInstance("DT13", emptySet(), setOf("DT24"), emptySet()),
 
-                mockIMethodInstance("DT21", emptySet(), Set.of("DT31"), emptySet()),
+                mockIMethodInstance("DT21", emptySet(), setOf("DT31"), emptySet()),
                 mockIMethodInstance("DT22", emptySet(), emptySet(), emptySet()),
                 mockIMethodInstance("DT23", emptySet(), emptySet(), emptySet()),
-                mockIMethodInstance("DT24", emptySet(), Set.of("DT32"), emptySet()),
+                mockIMethodInstance("DT24", emptySet(), setOf("DT32"), emptySet()),
 
                 mockIMethodInstance("DT31", emptySet(), emptySet(), emptySet()),
-                mockIMethodInstance("DT32", emptySet(), Set.of("DT41"), emptySet()),
+                mockIMethodInstance("DT32", emptySet(), setOf("DT41"), emptySet()),
 
                 mockIMethodInstance("DT41", emptySet(), emptySet(), emptySet())
         );
 
-        Set<IMethodInstance> methodsSuperSet = Stream.of(Set.of(rootLevelMethod), dependantMethods)
+        Set<IMethodInstance> methodsSuperSet = Stream.of(setOf(rootLevelMethod), dependantMethods)
                                                      .flatMap(Collection::stream)
                                                      .collect(Collectors.toSet());
-        Set<IMethodInstance> methodsToResolve = Set.of(rootLevelMethod);
+        Set<IMethodInstance> methodsToResolve = setOf(rootLevelMethod);
 
         return Stream.of(
                 Arguments.of(methodsSuperSet, methodsToResolve, dependantMethods)
@@ -109,29 +110,29 @@ class DependantMethodResolverTest {
 
     private static Stream<Arguments> provideMethodsTreeWithOnlyDependantGroups() {
         IMethodInstance rootLevelMethod = mockIMethodInstance(
-                "rootLevelMethod", emptySet(), emptySet(), Set.of("DG1", "DG2", "DG3")
+                "rootLevelMethod", emptySet(), emptySet(), setOf("DG1", "DG2", "DG3")
         );
-        Set<IMethodInstance> dependantMethods = Set.of(
+        Set<IMethodInstance> dependantMethods = setOf(
                 // DT - dependant test, DG - dependant group, DT first number - tree level
-                mockIMethodInstance("DT11", Set.of("DG1"), emptySet(), Set.of("DG2")),
-                mockIMethodInstance("DT12", Set.of("DG2"), emptySet(), Set.of("DG3")),
-                mockIMethodInstance("DT13", Set.of("DG3"), emptySet(), Set.of("DG4")),
+                mockIMethodInstance("DT11", setOf("DG1"), emptySet(), setOf("DG2")),
+                mockIMethodInstance("DT12", setOf("DG2"), emptySet(), setOf("DG3")),
+                mockIMethodInstance("DT13", setOf("DG3"), emptySet(), setOf("DG4")),
 
-                mockIMethodInstance("DT21", Set.of("DG1"), emptySet(), Set.of("DG2", "DG4")),
-                mockIMethodInstance("DT22", Set.of("DG2"), emptySet(), Set.of("DG3")),
-                mockIMethodInstance("DT23", Set.of("DG2"), emptySet(), emptySet()),
-                mockIMethodInstance("DT24", Set.of("DG3"), emptySet(), emptySet()),
+                mockIMethodInstance("DT21", setOf("DG1"), emptySet(), setOf("DG2", "DG4")),
+                mockIMethodInstance("DT22", setOf("DG2"), emptySet(), setOf("DG3")),
+                mockIMethodInstance("DT23", setOf("DG2"), emptySet(), emptySet()),
+                mockIMethodInstance("DT24", setOf("DG3"), emptySet(), emptySet()),
 
-                mockIMethodInstance("DT31", Set.of("DG1"), emptySet(), Set.of("DG3", "DG4")),
-                mockIMethodInstance("DT32", Set.of("DG4"), emptySet(), emptySet()),
+                mockIMethodInstance("DT31", setOf("DG1"), emptySet(), setOf("DG3", "DG4")),
+                mockIMethodInstance("DT32", setOf("DG4"), emptySet(), emptySet()),
 
-                mockIMethodInstance("DT41", Set.of("DG4"), emptySet(), emptySet())
+                mockIMethodInstance("DT41", setOf("DG4"), emptySet(), emptySet())
         );
 
-        Set<IMethodInstance> methodsSuperSet = Stream.of(Set.of(rootLevelMethod), dependantMethods)
+        Set<IMethodInstance> methodsSuperSet = Stream.of(setOf(rootLevelMethod), dependantMethods)
                                                      .flatMap(Collection::stream)
                                                      .collect(Collectors.toSet());
-        Set<IMethodInstance> methodsToResolve = Set.of(rootLevelMethod);
+        Set<IMethodInstance> methodsToResolve = setOf(rootLevelMethod);
 
         return Stream.of(
                 Arguments.of(methodsSuperSet, methodsToResolve, dependantMethods)
@@ -140,29 +141,29 @@ class DependantMethodResolverTest {
 
     private static Stream<Arguments> provideMethodsTreeWithBothDependantMethodsAndGroups() {
         IMethodInstance rootLevelMethod = mockIMethodInstance(
-                "rootLevelMethod", emptySet(), Set.of("DT11", "DT12", "DT13"), Set.of("DG1")
+                "rootLevelMethod", emptySet(), setOf("DT11", "DT12", "DT13"), setOf("DG1")
         );
-        Set<IMethodInstance> dependantMethods = Set.of(
+        Set<IMethodInstance> dependantMethods = setOf(
                 // DT - dependant test, DG - dependant group, DT first number - tree level
-                mockIMethodInstance("DT11", Set.of("DG1"), Set.of("DT21", "DT22"), Set.of("DG2")),
-                mockIMethodInstance("DT12", Set.of("DG2"), Set.of("DT23"), Set.of("DG3")),
-                mockIMethodInstance("DT13", Set.of("DG3"), Set.of("DT24"), Set.of("DG4")),
+                mockIMethodInstance("DT11", setOf("DG1"), setOf("DT21", "DT22"), setOf("DG2")),
+                mockIMethodInstance("DT12", setOf("DG2"), setOf("DT23"), setOf("DG3")),
+                mockIMethodInstance("DT13", setOf("DG3"), setOf("DT24"), setOf("DG4")),
 
-                mockIMethodInstance("DT21", Set.of("DG1"), Set.of("DT31"), Set.of("DG2", "DG4")),
-                mockIMethodInstance("DT22", Set.of("DG2"), emptySet(), Set.of("DG3")),
-                mockIMethodInstance("DT23", Set.of("DG2"), emptySet(), emptySet()),
-                mockIMethodInstance("DT24", Set.of("DG3"), Set.of("DT32"), emptySet()),
+                mockIMethodInstance("DT21", setOf("DG1"), setOf("DT31"), setOf("DG2", "DG4")),
+                mockIMethodInstance("DT22", setOf("DG2"), emptySet(), setOf("DG3")),
+                mockIMethodInstance("DT23", setOf("DG2"), emptySet(), emptySet()),
+                mockIMethodInstance("DT24", setOf("DG3"), setOf("DT32"), emptySet()),
 
-                mockIMethodInstance("DT31", Set.of("DG1"), emptySet(), Set.of("DG3", "DG4")),
-                mockIMethodInstance("DT32", Set.of("DG4"), Set.of("DT41"), emptySet()),
+                mockIMethodInstance("DT31", setOf("DG1"), emptySet(), setOf("DG3", "DG4")),
+                mockIMethodInstance("DT32", setOf("DG4"), setOf("DT41"), emptySet()),
 
-                mockIMethodInstance("DT41", Set.of("DG4"), emptySet(), emptySet())
+                mockIMethodInstance("DT41", setOf("DG4"), emptySet(), emptySet())
         );
 
-        Set<IMethodInstance> methodsSuperSet = Stream.of(Set.of(rootLevelMethod), dependantMethods)
+        Set<IMethodInstance> methodsSuperSet = Stream.of(setOf(rootLevelMethod), dependantMethods)
                                                      .flatMap(Collection::stream)
                                                      .collect(Collectors.toSet());
-        Set<IMethodInstance> methodsToResolve = Set.of(rootLevelMethod);
+        Set<IMethodInstance> methodsToResolve = setOf(rootLevelMethod);
 
         return Stream.of(
                 Arguments.of(methodsSuperSet, methodsToResolve, dependantMethods)
@@ -173,7 +174,7 @@ class DependantMethodResolverTest {
         IMethodInstance rootLevelMethod = mockIMethodInstance(
                 "rootLevelMethod", emptySet(), emptySet(), emptySet()
         );
-        Set<IMethodInstance> otherMethods = Set.of(
+        Set<IMethodInstance> otherMethods = setOf(
                 mockIMethodInstance("T1", emptySet(), emptySet(), emptySet()),
                 mockIMethodInstance("T2", emptySet(), emptySet(), emptySet()),
                 mockIMethodInstance("T3", emptySet(), emptySet(), emptySet()),
@@ -186,10 +187,10 @@ class DependantMethodResolverTest {
                 mockIMethodInstance("T10", emptySet(), emptySet(), emptySet())
         );
 
-        Set<IMethodInstance> methodsSuperSet = Stream.of(Set.of(rootLevelMethod), otherMethods)
+        Set<IMethodInstance> methodsSuperSet = Stream.of(setOf(rootLevelMethod), otherMethods)
                                                      .flatMap(Collection::stream)
                                                      .collect(Collectors.toSet());
-        Set<IMethodInstance> methodsToResolve = Set.of(rootLevelMethod);
+        Set<IMethodInstance> methodsToResolve = setOf(rootLevelMethod);
 
         return Stream.of(
                 Arguments.of(methodsSuperSet, methodsToResolve, emptySet())

@@ -12,7 +12,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.Stack;
 import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 public final class DependantMethodResolver {
@@ -102,7 +101,7 @@ public final class DependantMethodResolver {
                                                                 .map(ITestNGMethod::getGroupsDependedUpon)
                                                                 .flatMap(Arrays::stream)
                                                                 // filter out groups that are already resolved
-                                                                .filter(Predicate.not(resolvedGroups::contains))
+                                                                .filter(group -> !resolvedGroups.contains(group))
                                                                 .collect(Collectors.toSet());
                 dependantGroupNames.addAll(dependantGroupNamesBatch);
             }
