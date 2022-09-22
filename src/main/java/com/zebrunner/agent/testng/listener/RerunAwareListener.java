@@ -15,6 +15,7 @@ import org.testng.ITestContext;
 import org.testng.ITestNGMethod;
 import org.testng.TestRunner;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -98,8 +99,14 @@ public class RerunAwareListener implements RerunListener, IMethodInterceptor {
         Set<IMethodInstance> methodsForRerun = methods.stream()
                                                       .filter(instance -> RunContextService.isEligibleForRerun(instance.getMethod()))
                                                       .collect(Collectors.toSet());
+
+        if (methodsForRerun.isEmpty()) {
+            return Collections.emptySet();
+        }
+
         Set<IMethodInstance> dependantMethods = DependantMethodResolver.resolve(methods, methodsForRerun);
         methodsForRerun.addAll(dependantMethods);
+
         return methodsForRerun;
     }
 
