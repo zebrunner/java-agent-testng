@@ -7,6 +7,9 @@ version = "${version != 'unspecified' ? version : '1.7.0'}"
 
 ext.coreVersion = project.properties['core.version'] ?: '1.7.3'
 
+sourceCompatibility = '11'
+targetCompatibility = '11'
+
 sourceSets {
     main {
         if (project.hasProperty('pluggable')) {
