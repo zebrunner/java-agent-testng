@@ -5,7 +5,10 @@ plugins {
 group = 'com.zebrunner'
 version = "${version != 'unspecified' ? version : '1.7.0'}"
 
-ext.coreVersion = project.properties['core.version'] ?: '1.7.0'
+ext.coreVersion = project.properties['core.version'] ?: '1.7.3'
+
+sourceCompatibility = '11'
+targetCompatibility = '11'
 
 sourceSets {
     main {
@@ -26,7 +29,7 @@ repositories {
 
 dependencies {
     api("com.zebrunner:agent-core:${coreVersion}")
-    implementation("org.testng:testng:7.5")
+    implementation('org.testng:testng:7.6.0')
     implementation('com.google.code.gson:gson:2.9.0')
 
     implementation('org.slf4j:slf4j-api:1.7.36')
