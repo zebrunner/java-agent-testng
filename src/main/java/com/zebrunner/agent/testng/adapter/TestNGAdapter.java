@@ -64,7 +64,7 @@ public class TestNGAdapter {
             }
             String name = rootXmlSuite.getName();
 
-            ChainedMaintainerResolver.addFirst(new RootXmlSuiteMaintainerResolver(rootXmlSuite));
+            ChainedMaintainerResolver.addLast(new RootXmlSuiteMaintainerResolver(rootXmlSuite));
 
             ConfigurationHolder.addConfigurationProviderAfter(
                     new RootXmlSuiteConfigurationProvider(rootXmlSuite),
