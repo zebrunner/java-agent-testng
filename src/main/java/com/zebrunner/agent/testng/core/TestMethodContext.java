@@ -1,6 +1,7 @@
 package com.zebrunner.agent.testng.core;
 
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -26,6 +27,7 @@ public class TestMethodContext {
     @Getter
     private List<Integer> dataProviderIndicesForRerun = Collections.emptyList();
     private List<Object[]> dataProviderData = Collections.emptyList();
+    private final ThreadLocal<DataProviderData> currentDataProviderData = new ThreadLocal<>();
     private final ThreadLocal<Integer> currentDataProviderIteratorIndex = ThreadLocal.withInitial(() -> -1);
 
     public void setDataProviderIndicesForRerun(Collection<Integer> indicesForRerun) {
@@ -47,6 +49,10 @@ public class TestMethodContext {
         this.currentDataProviderIteratorIndex.set(currentDataProviderIteratorIndex);
     }
 
+    public void setCurrentDataProviderData(Object[] parameters, Integer index) {
+        this.currentDataProviderData.set(new DataProviderData(parameters, index));
+    }
+
     public int getCurrentDataProviderIndex(Object[] actualTestParameters) {
         return this.getCurrentDataProviderIteratorIndex()
                    .filter(currentIndex -> currentIndex != -1)
@@ -54,21 +60,19 @@ public class TestMethodContext {
                    // when data provider data is loaded in one thread but is used in another one.
                    // in such cases we try to find data provider line by matching
                    // the test method arguments or their values
-                   .orElseGet(() -> this.getReferenceEqualDataProviderData(actualTestParameters)
-                                        .orElseGet(() -> this.getValueEqualDataProviderData(actualTestParameters)
-                                                             .orElseGet(() -> this.getStringSameDataProviderData(actualTestParameters)
-                                                                                  .orElse(-1))
-                                        )
-                   );
+                   .or(() -> this.getReferenceEqualDataProviderData(actualTestParameters))
+                   .or(() -> this.getValueEqualDataProviderData(actualTestParameters))
+                   .or(() -> this.getStringSameDataProviderData(actualTestParameters))
+                   .or(() -> this.getIndexOfMatchingDataProviderData(actualTestParameters))
+                   .orElse(-1);
     }
 
     public Optional<Integer> getCurrentDataProviderIteratorIndex() {
         Integer currentIndex = currentDataProviderIteratorIndex.get();
-        if (currentIndex > -1 && dataProviderIndicesForRerun.size() > currentIndex) {
-            return Optional.ofNullable(dataProviderIndicesForRerun.get(currentIndex));
-        } else {
-            return Optional.of(currentIndex);
-        }
+
+        return currentIndex > -1 && dataProviderIndicesForRerun.size() > currentIndex
+                ? Optional.ofNullable(dataProviderIndicesForRerun.get(currentIndex))
+                : Optional.of(currentIndex);
     }
 
     public Optional<Integer> getReferenceEqualDataProviderData(Object[] data) {
@@ -77,6 +81,7 @@ public class TestMethodContext {
                 return Optional.of(i);
             }
         }
+
         return Optional.empty();
     }
 
@@ -90,6 +95,7 @@ public class TestMethodContext {
                 return Optional.of(i);
             }
         }
+
         return Optional.empty();
     }
 
@@ -103,6 +109,7 @@ public class TestMethodContext {
                 return Optional.of(i);
             }
         }
+
         return Optional.empty();
     }
 
@@ -112,12 +119,30 @@ public class TestMethodContext {
                      .collect(Collectors.toList());
     }
 
+    private Optional<Integer> getIndexOfMatchingDataProviderData(Object[] actualTestParameters) {
+        DataProviderData currentDataProviderData = this.currentDataProviderData.get();
+
+        if (currentDataProviderData != null && Arrays.equals(currentDataProviderData.parameters, actualTestParameters)) {
+            return Optional.ofNullable(currentDataProviderData.index);
+        }
+
+        return Optional.empty();
+    }
+
     public void incrementInvocationIndex() {
         currentInvocationCount.get().incrementAndGet();
     }
 
     public int getCurrentInvocationIndex() {
         return currentInvocationCount.get().get();
+    }
+
+    @RequiredArgsConstructor
+    private static class DataProviderData {
+
+        private final Object[] parameters;
+        private final Integer index;
+
     }
 
 }

@@ -72,6 +72,11 @@ public class RunContextService {
                          .setCurrentDataProviderIteratorIndex(currentDataProviderIteratorIndex);
     }
 
+    public static void setCurrentDataProviderData(ITestNGMethod method, ITestContext context, Object[] currentDataProviderData, int index) {
+        RunContextService.getOrInitRunContext(method, context)
+                         .setCurrentDataProviderData(currentDataProviderData, index);
+    }
+
     public static int getCurrentDataProviderIndex(ITestNGMethod method, ITestContext context, Object[] parameters) {
         return RunContextService.getMethodContext(method, context)
                                 .map(testMethodContext -> testMethodContext.getCurrentDataProviderIndex(parameters))
