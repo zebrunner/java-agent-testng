@@ -19,8 +19,7 @@ import com.zebrunner.agent.testng.core.maintainer.RootXmlSuiteMaintainerResolver
 import com.zebrunner.agent.testng.core.testname.TestNameResolverRegistry;
 import com.zebrunner.agent.testng.listener.RetryService;
 import com.zebrunner.agent.testng.listener.RunContextService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.testng.ISuite;
 import org.testng.ITestContext;
 import org.testng.ITestNGMethod;
@@ -28,7 +27,6 @@ import org.testng.ITestResult;
 import org.testng.annotations.Test;
 import org.testng.xml.XmlSuite;
 
-import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Method;
 import java.time.Instant;
 import java.time.OffsetDateTime;
@@ -40,9 +38,8 @@ import java.util.stream.Collectors;
 /**
  * Adapter used to convert TestNG test domain to Zebrunner Agent domain
  */
+@Slf4j
 public class TestNGAdapter {
-
-    private static final Logger log = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
     private final TestRunRegistrar registrar;
 
@@ -86,7 +83,7 @@ public class TestNGAdapter {
         if (isRetryFinished(testResult.getMethod(), testResult.getTestContext())) {
             log.debug("TestNGAdapter -> registerTestStart: retry is finished");
 
-            TestInvocationContext testContext = buildTestInvocationContext(testResult);
+            TestInvocationContext testContext = this.buildTestStartInvocationContext(testResult);
             String correlationData = testContext.asJsonString();
             TestStartDescriptor testStartDescriptor = buildTestStartDescriptor(correlationData, testResult);
 
@@ -104,7 +101,7 @@ public class TestNGAdapter {
             if (isRetryFinished(nextTestMethod, testResult.getTestContext())) {
                 log.debug("TestNGAdapter -> registerHeadlessTestStart: retry is finished");
 
-                TestInvocationContext testContext = buildTestInvocationContext(testResult);
+                TestInvocationContext testContext = this.buildTestStartInvocationContext(testResult);
                 TestStartDescriptor testStartDescriptor = buildTestStartDescriptor(null, testResult);
 
                 setZebrunnerTestIdOnRerun(testResult, nextTestMethod, testStartDescriptor);
@@ -115,6 +112,19 @@ public class TestNGAdapter {
                 log.debug("TestNGAdapter -> registerHeadlessTestStart: retry is NOT finished");
             }
         }
+    }
+
+    private TestInvocationContext buildTestStartInvocationContext(ITestResult testResult) {
+        ITestNGMethod testMethod = testResult.getMethod();
+        ITestContext testContext = testResult.getTestContext();
+        Object[] parameters = testResult.getParameters();
+
+        int dataProviderIndex = RunContextService.getCurrentDataProviderIndex(testMethod, testContext, parameters);
+        RunContextService.setCurrentDataProviderData(testMethod, testContext, parameters, dataProviderIndex);
+
+        int invocationIndex = RunContextService.getMethodInvocationIndex(testMethod, testContext);
+
+        return buildTestInvocationContext(testMethod, dataProviderIndex, parameters, invocationIndex);
     }
 
     private void setZebrunnerTestIdOnRerun(ITestResult testResult, ITestNGMethod testMethod, TestStartDescriptor testStartDescriptor) {
@@ -153,7 +163,7 @@ public class TestNGAdapter {
 
         TestFinishDescriptor testFinishDescriptor = new TestFinishDescriptor(Status.PASSED, endedAt);
 
-        TestInvocationContext testContext = buildTestInvocationContext(testResult);
+        TestInvocationContext testContext = buildTestFinishInvocationContext(testResult);
         String id = generateTestId(testContext);
         registrar.registerTestFinish(id, testFinishDescriptor);
 
@@ -165,7 +175,7 @@ public class TestNGAdapter {
         if (isRetryFinished(testResult.getMethod(), testResult.getTestContext())) {
             log.debug("TestNGAdapter -> registerFailedTestFinish: retry is finished");
 
-            TestInvocationContext testContext = buildTestInvocationContext(testResult);
+            TestInvocationContext testContext = buildTestFinishInvocationContext(testResult);
             String id = generateTestId(testContext);
 
             if (!registrar.isTestStarted(id)) {
@@ -187,7 +197,7 @@ public class TestNGAdapter {
         if (isRetryFinished(testResult.getMethod(), testResult.getTestContext())) {
             log.debug("TestNGAdapter -> registerSkippedTestFinish: retry is finished");
 
-            TestInvocationContext testContext = buildTestInvocationContext(testResult);
+            TestInvocationContext testContext = buildTestFinishInvocationContext(testResult);
             String id = generateTestId(testContext);
 
             OffsetDateTime endedAt = ofMillis(testResult.getEndMillis());
@@ -200,23 +210,31 @@ public class TestNGAdapter {
         }
     }
 
+    private TestInvocationContext buildTestFinishInvocationContext(ITestResult testResult) {
+        ITestNGMethod testMethod = testResult.getMethod();
+        ITestContext testContext = testResult.getTestContext();
+        Object[] parameters = testResult.getParameters();
+
+        int dataProviderIndex = RunContextService.getCurrentDataProviderIndex(testMethod, testContext, parameters);
+//        if (dataProviderIndex == -1) {
+//            // if the data provider data has been modified during the test,
+//            // then the parameters at the end of the test will not be equal to the parameters at the start of the test.
+//            // for such cases, we try to memorize the original method arguments in thread-local variable
+//            // and search by them here
+//            parameters = testStartDataProviderData.get();
+//            RunContextService.getCurrentDataProviderIndex(testMethod, testContext, parameters);
+//        }
+        int invocationIndex = RunContextService.getMethodInvocationIndex(testMethod, testContext);
+
+        return buildTestInvocationContext(testMethod, dataProviderIndex, parameters, invocationIndex);
+    }
+
     public void registerAfterTestStart() {
         registrar.registerAfterTestStart();
     }
 
     public void registerAfterTestFinish() {
         registrar.registerAfterTestFinish();
-    }
-
-    private TestInvocationContext buildTestInvocationContext(ITestResult testResult) {
-        ITestNGMethod testMethod = testResult.getMethod();
-        ITestContext testContext = testResult.getTestContext();
-        Object[] parameters = testResult.getParameters();
-
-        int dataProviderIndex = RunContextService.getCurrentDataProviderIndex(testMethod, testContext, parameters);
-        int invocationIndex = RunContextService.getMethodInvocationIndex(testMethod, testContext);
-
-        return buildTestInvocationContext(testMethod, dataProviderIndex, parameters, invocationIndex);
     }
 
     private TestInvocationContext buildTestInvocationContext(ITestNGMethod testMethod, int dataProviderIndex, Object[] parameters, int invocationIndex) {
