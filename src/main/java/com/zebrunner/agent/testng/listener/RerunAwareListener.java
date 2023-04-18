@@ -70,7 +70,13 @@ public class RerunAwareListener implements RerunListener, IMethodInterceptor {
         if (RunContextService.countInvocationContexts() < actualMethodsForRerun.size()) {
             List<TestDTO> tests = RerunService.retrieveFullExecutionContextTests();
             Map<TestInvocationContext, Long> invocationContexts = getInvocationContexts(tests);
-            RunContextService.addInvocationContexts(invocationContexts);
+
+            for (IMethodInstance methodInstance : actualMethodsForRerun) {
+                invocationContexts.entrySet()
+                                  .stream()
+                                  .filter(contextAndTestId -> RunContextService.belongsToMethod(contextAndTestId.getKey(), methodInstance.getMethod()))
+                                  .forEach(RunContextService::addInvocationContext);
+            }
         }
 
         actualMethodsForRerun.forEach(methodInstance -> this.setDataProviderForRerun(methodInstance.getMethod(), runner));
