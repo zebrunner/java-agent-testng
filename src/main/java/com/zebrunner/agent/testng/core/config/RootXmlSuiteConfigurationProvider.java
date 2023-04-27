@@ -26,8 +26,7 @@ public class RootXmlSuiteConfigurationProvider implements ConfigurationProvider 
                                      .projectKey(rootXmlSuite.getParameter(PROJECT_KEY_PARAMETER))
                                      .run(new ReportingConfiguration.RunConfiguration(
                                              rootXmlSuite.getParameter(RUN_DISPLAY_NAME_PARAMETER),
-                                             null, null, null, null, null, null,
-                                             new ReportingConfiguration.RunConfiguration.TestCaseStatus()
+                                             null, null, null, null, null, null
                                      ))
                                      .notification(new ReportingConfiguration.NotificationConfiguration(
                                              null,
@@ -39,6 +38,7 @@ public class RootXmlSuiteConfigurationProvider implements ConfigurationProvider 
                                              parseLong(rootXmlSuite.getParameter(MILESTONE_ID_PARAMETER)),
                                              rootXmlSuite.getParameter(MILESTONE_NAME_PARAMETER)
                                      ))
+                                     .tcm(new ReportingConfiguration.TcmConfiguration())
                                      .build();
     }
 
