@@ -9,6 +9,7 @@ import org.testng.ITestContext;
 import org.testng.ITestNGMethod;
 import org.testng.internal.ConstructorOrMethod;
 
+import javax.annotation.Nullable;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -33,7 +34,11 @@ public class RunContextService {
                 .stream()
                 // filter out tests without invocation context
                 .filter(contextToTestId -> Objects.nonNull(contextToTestId.getKey()))
-                .forEach(contextToTestId -> RunContextService.INVOCATION_CONTEXT_TO_TEST_IDS.putIfAbsent(contextToTestId.getKey(), contextToTestId.getValue()));
+                .forEach(RunContextService::addInvocationContext);
+    }
+
+    static void addInvocationContext(Map.Entry<TestInvocationContext, Long> contextToTestId) {
+        RunContextService.INVOCATION_CONTEXT_TO_TEST_IDS.putIfAbsent(contextToTestId.getKey(), contextToTestId.getValue());
     }
 
     public static void incrementMethodInvocationIndex(ITestNGMethod method, ITestContext context) {
@@ -130,18 +135,14 @@ public class RunContextService {
     public static List<TestInvocationContext> findInvocationsForRerun(ITestNGMethod method) {
         return INVOCATION_CONTEXT_TO_TEST_IDS.keySet()
                                              .stream()
-                                             .filter(Objects::nonNull)
                                              .filter(context -> belongsToMethod(context, method))
-                                             .filter(context -> belongsToTheSameFactoryInstance(context, method))
                                              .collect(Collectors.toList());
     }
 
     public static Optional<Long> getZebrunnerTestIdOnRerun(ITestNGMethod method, Integer dataProviderIndex) {
         return INVOCATION_CONTEXT_TO_TEST_IDS.keySet()
                                              .stream()
-                                             .filter(Objects::nonNull)
                                              .filter(context -> belongsToMethod(context, method))
-                                             .filter(context -> belongsToTheSameFactoryInstance(context, method))
                                              .filter(context -> context.getDataProviderIndex() == dataProviderIndex)
                                              .map(INVOCATION_CONTEXT_TO_TEST_IDS::get)
                                              .findFirst();
@@ -150,14 +151,19 @@ public class RunContextService {
     public static boolean isEligibleForRerun(ITestNGMethod method) {
         return INVOCATION_CONTEXT_TO_TEST_IDS.keySet()
                                              .stream()
-                                             .filter(Objects::nonNull)
-                                             .anyMatch(context -> belongsToMethod(context, method) && belongsToTheSameFactoryInstance(context, method));
+                                             .anyMatch(context -> belongsToMethod(context, method));
+    }
+
+    public static boolean belongsToMethod(@Nullable TestInvocationContext invocationContext, ITestNGMethod method) {
+        return invocationContext != null
+               && hasSameMethodSignature(invocationContext, method)
+               && belongsToTheSameFactoryInstance(invocationContext, method);
     }
 
     /**
      * Checks if test execution context has the same method signature as test method provided
      */
-    private static boolean belongsToMethod(TestInvocationContext invocationContext, ITestNGMethod method) {
+    private static boolean hasSameMethodSignature(TestInvocationContext invocationContext, ITestNGMethod method) {
         String contextParameters = String.join(", ", invocationContext.getParameterClassNames());
         String methodParameters = String.join(", ", getMethodParameterNames(method));
 
