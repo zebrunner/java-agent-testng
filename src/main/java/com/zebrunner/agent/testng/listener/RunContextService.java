@@ -9,7 +9,6 @@ import org.testng.ITestContext;
 import org.testng.ITestNGMethod;
 import org.testng.internal.ConstructorOrMethod;
 
-import javax.annotation.Nullable;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -154,7 +153,7 @@ public class RunContextService {
                                              .anyMatch(context -> belongsToMethod(context, method));
     }
 
-    public static boolean belongsToMethod(@Nullable TestInvocationContext invocationContext, ITestNGMethod method) {
+    public static boolean belongsToMethod(TestInvocationContext invocationContext, ITestNGMethod method) {
         return invocationContext != null
                && hasSameMethodSignature(invocationContext, method)
                && belongsToTheSameFactoryInstance(invocationContext, method);
