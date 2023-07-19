@@ -154,7 +154,15 @@ public class TestNGAdapter {
             dataProviderIndex = null;
         }
 
-        return new TestStartDescriptor(correlationData, displayName, startedAt, realClass, method, dataProviderIndex);
+        return TestStartDescriptor.builder()
+                                  .correlationData(correlationData)
+                                  .name(displayName)
+                                  .startedAt(startedAt)
+                                  .testClass(realClass)
+                                  .testMethod(method)
+                                  .argumentsIndex(dataProviderIndex)
+                                  .testGroups(Arrays.asList(testMethod.getGroups()))
+                                  .build();
     }
 
     public void registerTestFinish(ITestResult testResult) {
