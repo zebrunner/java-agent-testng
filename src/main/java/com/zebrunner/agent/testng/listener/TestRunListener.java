@@ -55,7 +55,7 @@ public class TestRunListener extends RerunAwareListener implements ISuiteListene
 
     @Override
     public void onTestSuccess(ITestResult testResult) {
-        log.warn("[ON_TEST_SUCCESS] {}%n[PARAMETERS]{}%n",testResult.toString(), testResult.getParameters());
+        log.warn("[ON_TEST_SUCCESS] {}%n[PARAMETERS]{}\n",testResult, testResult.getParameters());
         log.debug("Beginning TestRunListener -> onTestSuccess");
         adapter.registerTestFinish(testResult);
         log.debug("Finishing TestRunListener -> onTestSuccess");
@@ -63,7 +63,7 @@ public class TestRunListener extends RerunAwareListener implements ISuiteListene
 
     @Override
     public void onTestFailure(ITestResult testResult) {
-        log.warn("[ON_TEST_FAILURE] {}%n[PARAMETERS]{}%n",testResult.toString(), testResult.getParameters());
+        log.warn("[ON_TEST_FAILURE] {}%n[PARAMETERS]{}\n",testResult, testResult.getParameters());
         log.debug("Beginning TestRunListener -> onTestFailure");
         adapter.registerFailedTestFinish(testResult);
         log.debug("Finishing TestRunListener -> onTestFailure");
@@ -71,7 +71,7 @@ public class TestRunListener extends RerunAwareListener implements ISuiteListene
 
     @Override
     public void onTestSkipped(ITestResult testResult) {
-        log.warn("[ON_TEST_SKIPPED] {}%n[PARAMETERS]{}%n",testResult.toString(), testResult.getParameters());
+        log.warn("[ON_TEST_SKIPPED] {}%n[PARAMETERS]{}\n",testResult, testResult.getParameters());
         log.debug("Beginning TestRunListener -> onTestSkipped");
         adapter.registerSkippedTestFinish(testResult);
         log.debug("Finishing TestRunListener -> onTestSkipped");
@@ -79,7 +79,7 @@ public class TestRunListener extends RerunAwareListener implements ISuiteListene
 
     @Override
     public void onTestFailedButWithinSuccessPercentage(ITestResult testResult) {
-        log.warn("[ON_TEST_FAILED_PERCENTAGE] {}%n[PARAMETERS]{}%n",testResult.toString(), testResult.getParameters());
+        log.warn("[ON_TEST_FAILED_PERCENTAGE] {}%n[PARAMETERS]{}\n",testResult, testResult.getParameters());
         log.debug("Beginning TestRunListener -> onTestFailedButWithinSuccessPercentage");
         adapter.registerTestFinish(testResult);
         log.debug("Finishing TestRunListener -> onTestFailedButWithinSuccessPercentage");
@@ -95,7 +95,7 @@ public class TestRunListener extends RerunAwareListener implements ISuiteListene
 
     @Override
     public void beforeConfiguration(ITestResult tr, ITestNGMethod tm) {
-        log.warn("[BEFORE_CONFIGURATION] {}%n[PARAMETERS]{}%n[METHOD]{}%n",tr.toString(), tr.getParameters(), tm.toString());
+        log.warn("[BEFORE_CONFIGURATION] {}%n[PARAMETERS]{}\n[METHOD]{}\n",tr, tr.getParameters(), tm);
 
         ITestNGMethod testMethod = tr.getMethod();
         if (testMethod instanceof ConfigurationMethod) {
@@ -112,19 +112,19 @@ public class TestRunListener extends RerunAwareListener implements ISuiteListene
 
     @Override
     public void onConfigurationSuccess(ITestResult tr) {
-        log.warn("[ON_CONFIGURATION_SUCCESS] {}%n[PARAMETERS]{}%n",tr.toString(), tr.getParameters());
+        log.warn("[ON_CONFIGURATION_SUCCESS] {}\n[PARAMETERS]{}\n",tr, tr.getParameters());
         registerFinishOfAfterMethod(tr);
     }
 
     @Override
     public void onConfigurationFailure(ITestResult tr) {
-        log.warn("[ON_CONFIGURATION_FAILURE] {}%n[PARAMETERS]{}%n",tr.toString(), tr.getParameters());
+        log.warn("[ON_CONFIGURATION_FAILURE] {}\n[PARAMETERS]{}\n",tr, tr.getParameters());
         registerFinishOfAfterMethod(tr);
     }
 
     @Override
     public void onConfigurationSkip(ITestResult tr) {
-        log.warn("[ON_CONFIGURATION_SKIP] {}%n[PARAMETERS]{}%n",tr.toString(), tr.getParameters());
+        log.warn("[ON_CONFIGURATION_SKIP] {}\n[PARAMETERS]{}\n",tr, tr.getParameters());
         registerFinishOfAfterMethod(tr);
     }
 

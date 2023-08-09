@@ -80,16 +80,24 @@ public class TestNGAdapter {
     }
 
     public void registerTestStart(ITestResult testResult) {
+        log.warn("[REGISTER_TEST_START] {}\n",testResult);
         if (isRetryFinished(testResult.getMethod(), testResult.getTestContext())) {
             log.debug("TestNGAdapter -> registerTestStart: retry is finished");
 
             TestInvocationContext testContext = this.buildTestStartInvocationContext(testResult);
+            log.warn("[REGISTER_TEST_START] testContext{}\n",testContext);
+
             String correlationData = testContext.asJsonString();
+            log.warn("[REGISTER_TEST_START] correlationData{}\n",correlationData);
+
             TestStartDescriptor testStartDescriptor = buildTestStartDescriptor(correlationData, testResult);
+            log.warn("[REGISTER_TEST_START] testStartDescriptor{}\n",testStartDescriptor);
 
             setZebrunnerTestIdOnRerun(testResult, testResult.getMethod(), testStartDescriptor);
 
             String id = generateTestId(testContext);
+            log.warn("[REGISTER_TEST_START] id{}\n",id);
+
             registrar.registerTestStart(id, testStartDescriptor);
         } else {
             log.debug("TestNGAdapter -> registerTestStart: retry is NOT finished");
@@ -97,16 +105,22 @@ public class TestNGAdapter {
     }
 
     public void registerHeadlessTestStart(ITestResult testResult, ITestNGMethod nextTestMethod) {
+        log.warn("[REGISTER_TEST_HEADLESS_START] {}\n",testResult);
+
         if (!registrar.isTestStarted()) { // we should not register the same headless test twice
             if (isRetryFinished(nextTestMethod, testResult.getTestContext())) {
                 log.debug("TestNGAdapter -> registerHeadlessTestStart: retry is finished");
 
                 TestInvocationContext testContext = this.buildTestStartInvocationContext(testResult);
+                log.warn("[REGISTER_TEST_HEADLESS_START] testContext{}\n",testContext);
+
                 TestStartDescriptor testStartDescriptor = buildTestStartDescriptor(null, testResult);
+                log.warn("[REGISTER_TEST_HEADLESS_START] testStartDescriptor{}\n",testStartDescriptor);
 
                 setZebrunnerTestIdOnRerun(testResult, nextTestMethod, testStartDescriptor);
 
                 String id = generateTestId(testContext);
+                log.warn("[REGISTER_TEST_HEADLESS_START] id{}\n",id);
                 registrar.registerHeadlessTestStart(id, testStartDescriptor);
             } else {
                 log.debug("TestNGAdapter -> registerHeadlessTestStart: retry is NOT finished");
@@ -167,14 +181,19 @@ public class TestNGAdapter {
     }
 
     public void registerTestFinish(ITestResult testResult) {
-        log.warn("[REGISTER_TEST_FINISH] {}%n",testResult.toString());
+        log.warn("[REGISTER_TEST_FINISH] {}\n",testResult.toString());
         long endedAtMillis = testResult.getEndMillis();
         OffsetDateTime endedAt = ofMillis(endedAtMillis);
+        log.warn("[REGISTER_TEST_FINISH] endedAt{}\n",endedAt);
 
         TestFinishDescriptor testFinishDescriptor = new TestFinishDescriptor(Status.PASSED, endedAt);
+        log.warn("[REGISTER_TEST_FINISH] testFinishDescriptor{}\n",testFinishDescriptor);
 
         TestInvocationContext testContext = buildTestFinishInvocationContext(testResult);
+        log.warn("[REGISTER_TEST_FINISH] testContext{}\n",testContext);
+
         String id = generateTestId(testContext);
+        log.warn("[REGISTER_TEST_FINISH] testId{}\n",id);
         registrar.registerTestFinish(id, testFinishDescriptor);
 
         // forcibly disable retry otherwise passed can't be registered in reporting tool!
