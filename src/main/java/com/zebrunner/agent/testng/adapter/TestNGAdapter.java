@@ -120,6 +120,7 @@ public class TestNGAdapter {
         Object[] parameters = testResult.getParameters();
 
         int dataProviderIndex = RunContextService.getCurrentDataProviderIndex(testMethod, testContext, parameters);
+        log.warn("[buildTestStartInvocationContext] DataProviderIndex:{}%n",dataProviderIndex);
         RunContextService.setCurrentDataProviderData(testMethod, testContext, parameters, dataProviderIndex);
 
         int invocationIndex = RunContextService.getMethodInvocationIndex(testMethod, testContext);
@@ -166,6 +167,7 @@ public class TestNGAdapter {
     }
 
     public void registerTestFinish(ITestResult testResult) {
+        log.warn("[REGISTER_TEST_FINISH] {}%n",testResult.toString());
         long endedAtMillis = testResult.getEndMillis();
         OffsetDateTime endedAt = ofMillis(endedAtMillis);
 
