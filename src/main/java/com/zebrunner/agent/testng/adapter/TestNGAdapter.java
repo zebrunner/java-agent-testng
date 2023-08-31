@@ -90,6 +90,7 @@ public class TestNGAdapter {
             setZebrunnerTestIdOnRerun(testResult, testResult.getMethod(), testStartDescriptor);
 
             String id = generateTestId(testContext);
+            log.warn("REGISTER TEST START CALL. Id: '" + id + "'. Descriptor:" + testStartDescriptor);
             registrar.registerTestStart(id, testStartDescriptor);
         } else {
             log.debug("TestNGAdapter -> registerTestStart: retry is NOT finished");
@@ -173,6 +174,7 @@ public class TestNGAdapter {
 
         TestInvocationContext testContext = buildTestFinishInvocationContext(testResult);
         String id = generateTestId(testContext);
+        log.warn("REGISTER TEST FINISH CALL. ID: '" + id + "'. Descriptor: "+ testFinishDescriptor);
         registrar.registerTestFinish(id, testFinishDescriptor);
 
         // forcibly disable retry otherwise passed can't be registered in reporting tool!
