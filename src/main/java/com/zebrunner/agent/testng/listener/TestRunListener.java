@@ -3,6 +3,7 @@ package com.zebrunner.agent.testng.listener;
 import com.zebrunner.agent.testng.adapter.TestNGAdapter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.testng.IAlterSuiteListener;
 import org.testng.IConfigurationListener;
 import org.testng.ISuite;
 import org.testng.ISuiteListener;
@@ -12,13 +13,17 @@ import org.testng.ITestNGListener;
 import org.testng.ITestNGMethod;
 import org.testng.ITestResult;
 import org.testng.internal.ConfigurationMethod;
+import org.testng.xml.XmlSuite;
 
 import java.lang.invoke.MethodHandles;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Zebrunner Agent Listener implementation tracking TestNG test run events
  */
-public class TestRunListener extends RerunAwareListener implements ISuiteListener, ITestListener, ITestNGListener, IConfigurationListener {
+public class TestRunListener extends RerunAwareListener implements ISuiteListener, ITestListener, ITestNGListener, IConfigurationListener,
+        IAlterSuiteListener {
 
     private static final Logger log = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
@@ -26,6 +31,20 @@ public class TestRunListener extends RerunAwareListener implements ISuiteListene
 
     public TestRunListener() {
         this.adapter = new TestNGAdapter();
+    }
+
+    @Override
+    public void alter(List<XmlSuite> suites) {
+        List<XmlSuite> list = suites.stream()
+                .filter(suite -> suite.getParentSuite() == null)
+                .collect(Collectors.toList());
+        if (list.size() > 1) {
+            XmlSuite root = new XmlSuite();
+            root.setName("Generic root suite");
+            list.forEach(s -> {
+                s.setParentSuite(root);
+            });
+        }
     }
 
     @Override
