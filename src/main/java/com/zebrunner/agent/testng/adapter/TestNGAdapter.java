@@ -33,9 +33,9 @@ import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
+
 
 /**
  * Adapter used to convert TestNG test domain to Zebrunner Agent domain
@@ -47,7 +47,7 @@ public class TestNGAdapter {
 
     private XmlSuite rootXmlSuite;
 
-    private static final Map<String, Integer> SCENARIO_OUTLINE_COUNTER = new ConcurrentHashMap<>();
+    private static final AtomicBoolean CUCUMBER = new AtomicBoolean(true);
 
     public TestNGAdapter() {
         this.registrar = TestRunRegistrar.getInstance();
@@ -160,34 +160,27 @@ public class TestNGAdapter {
             dataProviderIndex = null;
         }
 
-        //Cucumber
-        try {
-            Class<?> pickleWrapperClass = Class.forName("io.cucumber.testng.PickleWrapper");
-            Class<?> featureWrapperClass = Class.forName("io.cucumber.testng.FeatureWrapper");
-            String featureName = Arrays.stream(parameters)
-                    .filter(featureWrapperClass::isInstance)
-                    .map(feature -> feature.toString()
-                            .replaceAll("^[\"]|[\"]$", ""))
-                    .findAny()
-                    .orElseThrow(ClassNotFoundException::new);
-            String pickleName = Arrays.stream(parameters)
-                    .filter(pickleWrapperClass::isInstance)
-                    .map(pickle -> pickle.toString()
-                            .replaceAll("^[\"]|[\"]$", ""))
-                    .findAny()
-                    .orElseThrow(ClassNotFoundException::new);
-
-            dataProviderIndex =  SCENARIO_OUTLINE_COUNTER.compute(featureName + pickleName, (k, v) -> {
-                if(v != null) {
-                    return v + 1;
-                } else {
-                    return 0;
-                }
-            });
-            realClassName = featureName;
-            methodName = pickleName;
-        } catch (ClassNotFoundException e) {
-            //do nothing
+        if (CUCUMBER.get()) {
+            try {
+                Class<?> pickleWrapperClass = Class.forName("io.cucumber.testng.PickleWrapper");
+                Class<?> featureWrapperClass = Class.forName("io.cucumber.testng.FeatureWrapper");
+                String featureName = Arrays.stream(parameters)
+                        .filter(featureWrapperClass::isInstance)
+                        .map(feature -> feature.toString()
+                                .replaceAll("^[\"]|[\"]$", ""))
+                        .findAny()
+                        .orElseThrow(ClassNotFoundException::new);
+                String pickleName = Arrays.stream(parameters)
+                        .filter(pickleWrapperClass::isInstance)
+                        .map(pickle -> pickle.toString()
+                                .replaceAll("^[\"]|[\"]$", ""))
+                        .findAny()
+                        .orElseThrow(ClassNotFoundException::new);
+                realClassName = featureName;
+                methodName = pickleName;
+            } catch (ClassNotFoundException e) {
+                CUCUMBER.set(false);
+            }
         }
 
         return TestStartDescriptor.builder()
