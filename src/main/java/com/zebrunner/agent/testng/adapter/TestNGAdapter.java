@@ -1,5 +1,22 @@
 package com.zebrunner.agent.testng.adapter;
 
+import org.testng.ISuite;
+import org.testng.ITestContext;
+import org.testng.ITestNGMethod;
+import org.testng.ITestResult;
+import org.testng.annotations.Test;
+import org.testng.xml.XmlSuite;
+
+import lombok.extern.slf4j.Slf4j;
+
+import java.lang.reflect.Method;
+import java.time.Instant;
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
+
 import com.zebrunner.agent.core.config.ConfigurationHolder;
 import com.zebrunner.agent.core.config.provider.SystemPropertiesConfigurationProvider;
 import com.zebrunner.agent.core.registrar.RunContextHolder;
@@ -19,21 +36,7 @@ import com.zebrunner.agent.testng.core.maintainer.RootXmlSuiteMaintainerResolver
 import com.zebrunner.agent.testng.core.testname.TestNameResolverRegistry;
 import com.zebrunner.agent.testng.listener.RetryService;
 import com.zebrunner.agent.testng.listener.RunContextService;
-import lombok.extern.slf4j.Slf4j;
-import org.testng.ISuite;
-import org.testng.ITestContext;
-import org.testng.ITestNGMethod;
-import org.testng.ITestResult;
-import org.testng.annotations.Test;
-import org.testng.xml.XmlSuite;
-
-import java.lang.reflect.Method;
-import java.time.Instant;
-import java.time.OffsetDateTime;
-import java.time.ZoneId;
-import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Collectors;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Adapter used to convert TestNG test domain to Zebrunner Agent domain
@@ -44,6 +47,8 @@ public class TestNGAdapter {
     private final TestRunRegistrar registrar;
 
     private XmlSuite rootXmlSuite;
+
+    private static final AtomicBoolean CUCUMBER = new AtomicBoolean(true);
 
     public TestNGAdapter() {
         this.registrar = TestRunRegistrar.getInstance();
@@ -132,7 +137,24 @@ public class TestNGAdapter {
             ITestContext context = testResult.getTestContext();
             Object[] parameters = testResult.getParameters();
 
+            // when parametrized method has at least on @BeforeMethod,
+            // then parameters array contains argument(s) of the @BeforeMethod(s).
+            //
+            // thus, if current run is a rerun, then we will not be able to figure out
+            // what method should be restarted in Zebrunner,
+            // because arguments index constitutes identity of a test in Zebrunner
+            //
+            // the workaround here is to add not used argument for the @BeforeMethod(s) with type Object[].
+            // in this case, TestNG will propagate the test method's arguments in this variable
+            // and the agent will be able to identify appropriate existing Zebrunner test
             int dataProviderIndex = RunContextService.getCurrentDataProviderIndex(testMethod, context, parameters);
+            if (dataProviderIndex == -1 && testMethod.isDataDriven() && parameters != null) {
+                for (Object parameter : parameters) {
+                    if (parameter instanceof Object[]) {
+                        dataProviderIndex = RunContextService.getCurrentDataProviderIndex(testMethod, context, ((Object[]) parameter));
+                    }
+                }
+            }
 
             RunContextService.getZebrunnerTestIdOnRerun(testMethod, dataProviderIndex)
                              .ifPresent(testStartDescriptor::setZebrunnerId);
@@ -147,11 +169,36 @@ public class TestNGAdapter {
         String displayName = TestNameResolverRegistry.get().resolve(testResult);
         OffsetDateTime startedAt = ofMillis(testResult.getStartMillis());
         Class<?> realClass = testResult.getTestClass().getRealClass();
+        String realClassName = null;
         Method method = testMethod.getConstructorOrMethod().getMethod();
+        String methodName = null;
 
         Integer dataProviderIndex = RunContextService.getCurrentDataProviderIndex(testMethod, context, parameters);
         if (dataProviderIndex == -1) {
             dataProviderIndex = null;
+        }
+
+        if (CUCUMBER.get()) {
+            try {
+                Class<?> pickleWrapperClass = Class.forName("io.cucumber.testng.PickleWrapper");
+                Class<?> featureWrapperClass = Class.forName("io.cucumber.testng.FeatureWrapper");
+                String featureName = Arrays.stream(parameters)
+                        .filter(featureWrapperClass::isInstance)
+                        .map(feature -> feature.toString()
+                                .replaceAll("^[\"]|[\"]$", ""))
+                        .findAny()
+                        .orElseThrow(ClassNotFoundException::new);
+                String pickleName = Arrays.stream(parameters)
+                        .filter(pickleWrapperClass::isInstance)
+                        .map(pickle -> pickle.toString()
+                                .replaceAll("^[\"]|[\"]$", ""))
+                        .findAny()
+                        .orElseThrow(ClassNotFoundException::new);
+                realClassName = featureName;
+                methodName = pickleName;
+            } catch (ClassNotFoundException e) {
+                CUCUMBER.set(false);
+            }
         }
 
         return TestStartDescriptor.builder()
@@ -159,7 +206,9 @@ public class TestNGAdapter {
                                   .name(displayName)
                                   .startedAt(startedAt)
                                   .testClass(realClass)
+                                  .testClassName(realClassName)
                                   .testMethod(method)
+                                  .testMethodName(methodName)
                                   .argumentsIndex(dataProviderIndex)
                                   .testGroups(Arrays.asList(testMethod.getGroups()))
                                   .build();
