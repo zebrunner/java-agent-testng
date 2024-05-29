@@ -1,5 +1,22 @@
 package com.zebrunner.agent.testng.adapter;
 
+import org.testng.ISuite;
+import org.testng.ITestContext;
+import org.testng.ITestNGMethod;
+import org.testng.ITestResult;
+import org.testng.annotations.Test;
+import org.testng.xml.XmlSuite;
+
+import lombok.extern.slf4j.Slf4j;
+
+import java.lang.reflect.Method;
+import java.time.Instant;
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
+
 import com.zebrunner.agent.core.config.ConfigurationHolder;
 import com.zebrunner.agent.core.config.provider.SystemPropertiesConfigurationProvider;
 import com.zebrunner.agent.core.registrar.RunContextHolder;
@@ -19,23 +36,7 @@ import com.zebrunner.agent.testng.core.maintainer.RootXmlSuiteMaintainerResolver
 import com.zebrunner.agent.testng.core.testname.TestNameResolverRegistry;
 import com.zebrunner.agent.testng.listener.RetryService;
 import com.zebrunner.agent.testng.listener.RunContextService;
-import lombok.extern.slf4j.Slf4j;
-import org.testng.ISuite;
-import org.testng.ITestContext;
-import org.testng.ITestNGMethod;
-import org.testng.ITestResult;
-import org.testng.annotations.Test;
-import org.testng.xml.XmlSuite;
-
-import java.lang.reflect.Method;
-import java.time.Instant;
-import java.time.OffsetDateTime;
-import java.time.ZoneId;
-import java.util.Arrays;
-import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.stream.Collectors;
-
 
 /**
  * Adapter used to convert TestNG test domain to Zebrunner Agent domain
@@ -136,7 +137,24 @@ public class TestNGAdapter {
             ITestContext context = testResult.getTestContext();
             Object[] parameters = testResult.getParameters();
 
+            // when parametrized method has at least on @BeforeMethod,
+            // then parameters array contains argument(s) of the @BeforeMethod(s).
+            //
+            // thus, if current run is a rerun, then we will not be able to figure out
+            // what method should be restarted in Zebrunner,
+            // because arguments index constitutes identity of a test in Zebrunner
+            //
+            // the workaround here is to add not used argument for the @BeforeMethod(s) with type Object[].
+            // in this case, TestNG will propagate the test method's arguments in this variable
+            // and the agent will be able to identify appropriate existing Zebrunner test
             int dataProviderIndex = RunContextService.getCurrentDataProviderIndex(testMethod, context, parameters);
+            if (dataProviderIndex == -1 && testMethod.isDataDriven() && parameters != null) {
+                for (Object parameter : parameters) {
+                    if (parameter instanceof Object[]) {
+                        dataProviderIndex = RunContextService.getCurrentDataProviderIndex(testMethod, context, ((Object[]) parameter));
+                    }
+                }
+            }
 
             RunContextService.getZebrunnerTestIdOnRerun(testMethod, dataProviderIndex)
                              .ifPresent(testStartDescriptor::setZebrunnerId);
