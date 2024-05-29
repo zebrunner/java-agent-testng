@@ -23,7 +23,7 @@ sourceSets {
 repositories {
     mavenCentral()
     maven {
-        url "https://nexus.zebrunner.dev/repository/ce-snapshots/"
+        url "https://public-nexus.zebrunner.com/repository/ce-snapshots/"
     }
 }
 

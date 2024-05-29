@@ -36,6 +36,7 @@ import com.zebrunner.agent.testng.core.maintainer.RootXmlSuiteMaintainerResolver
 import com.zebrunner.agent.testng.core.testname.TestNameResolverRegistry;
 import com.zebrunner.agent.testng.listener.RetryService;
 import com.zebrunner.agent.testng.listener.RunContextService;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Adapter used to convert TestNG test domain to Zebrunner Agent domain
@@ -46,6 +47,8 @@ public class TestNGAdapter {
     private final TestRunRegistrar registrar;
 
     private XmlSuite rootXmlSuite;
+
+    private static final AtomicBoolean CUCUMBER = new AtomicBoolean(true);
 
     public TestNGAdapter() {
         this.registrar = TestRunRegistrar.getInstance();
@@ -166,11 +169,36 @@ public class TestNGAdapter {
         String displayName = TestNameResolverRegistry.get().resolve(testResult);
         OffsetDateTime startedAt = ofMillis(testResult.getStartMillis());
         Class<?> realClass = testResult.getTestClass().getRealClass();
+        String realClassName = null;
         Method method = testMethod.getConstructorOrMethod().getMethod();
+        String methodName = null;
 
         Integer dataProviderIndex = RunContextService.getCurrentDataProviderIndex(testMethod, context, parameters);
         if (dataProviderIndex == -1) {
             dataProviderIndex = null;
+        }
+
+        if (CUCUMBER.get()) {
+            try {
+                Class<?> pickleWrapperClass = Class.forName("io.cucumber.testng.PickleWrapper");
+                Class<?> featureWrapperClass = Class.forName("io.cucumber.testng.FeatureWrapper");
+                String featureName = Arrays.stream(parameters)
+                        .filter(featureWrapperClass::isInstance)
+                        .map(feature -> feature.toString()
+                                .replaceAll("^[\"]|[\"]$", ""))
+                        .findAny()
+                        .orElseThrow(ClassNotFoundException::new);
+                String pickleName = Arrays.stream(parameters)
+                        .filter(pickleWrapperClass::isInstance)
+                        .map(pickle -> pickle.toString()
+                                .replaceAll("^[\"]|[\"]$", ""))
+                        .findAny()
+                        .orElseThrow(ClassNotFoundException::new);
+                realClassName = featureName;
+                methodName = pickleName;
+            } catch (ClassNotFoundException e) {
+                CUCUMBER.set(false);
+            }
         }
 
         return TestStartDescriptor.builder()
@@ -178,7 +206,9 @@ public class TestNGAdapter {
                                   .name(displayName)
                                   .startedAt(startedAt)
                                   .testClass(realClass)
+                                  .testClassName(realClassName)
                                   .testMethod(method)
+                                  .testMethodName(methodName)
                                   .argumentsIndex(dataProviderIndex)
                                   .testGroups(Arrays.asList(testMethod.getGroups()))
                                   .build();

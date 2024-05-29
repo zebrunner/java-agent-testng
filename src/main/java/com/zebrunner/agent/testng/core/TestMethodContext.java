@@ -7,9 +7,13 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
@@ -18,6 +22,8 @@ import java.util.stream.Collectors;
  */
 public class TestMethodContext {
 
+    private static final AtomicBoolean CUCUMBER = new AtomicBoolean(true);
+    private static final Map<KeyValueHolder<String, String>, List<Object>> CUCUMBER_PICKLES = new ConcurrentHashMap<>();
     /**
      * Represents current test method invocation. 0 means that method was not invoked yet.
      */
@@ -54,8 +60,9 @@ public class TestMethodContext {
     }
 
     public int getCurrentDataProviderIndex(Object[] actualTestParameters) {
-        return this.getCurrentDataProviderIteratorIndex()
-                   .filter(currentIndex -> currentIndex != -1)
+        return this.getCucumberDataProviderData(actualTestParameters)
+                .or(() -> getCurrentDataProviderIteratorIndex()
+                        .filter(currentIndex -> currentIndex != -1))
                    // the checks are performed for cases
                    // when data provider data is loaded in one thread but is used in another one.
                    // in such cases we try to find data provider line by matching
@@ -66,6 +73,65 @@ public class TestMethodContext {
                    .or(() -> this.getIndexOfMatchingDataProviderData(actualTestParameters))
                    .orElse(-1);
     }
+
+    public Optional<Integer> getCucumberDataProviderData(Object[] data) {
+        if (!CUCUMBER.get()) {
+            return Optional.empty();
+        }
+        try {
+            Class<?> pickleWrapperClass = Class.forName("io.cucumber.testng.PickleWrapper");
+            Class<?> featureWrapperClass = Class.forName("io.cucumber.testng.FeatureWrapper");
+            Object dataFeatureWrapper = Arrays.stream(data)
+                    .filter(featureWrapperClass::isInstance)
+                    .findAny()
+                    .orElseThrow(ClassNotFoundException::new);
+            Object dataPickleWrapper = Arrays.stream(data)
+                    .filter(pickleWrapperClass::isInstance)
+                    .findAny()
+                    .orElseThrow(ClassNotFoundException::new);
+
+            String dataFeatureName = dataFeatureWrapper.toString()
+                    .replaceAll("^[\"]|[\"]$", "");
+            String dataPickleName = dataPickleWrapper.toString()
+                    .replaceAll("^[\"]|[\"]$", "");
+
+            List<Object> pickles = CUCUMBER_PICKLES.computeIfAbsent(new KeyValueHolder<>(dataFeatureName, dataPickleName), k -> {
+                List<Object> scenarioOutlinePickles = new LinkedList<>();
+                for (Object[] dataProviderDatum : dataProviderData) {
+                    List<Object> dataProviderLineAsList = Arrays.asList(dataProviderDatum);
+                    Object featureWrapper = dataProviderLineAsList.stream()
+                            .filter(featureWrapperClass::isInstance)
+                            .findAny()
+                            .orElseThrow();
+                    Object pickleWrapper = dataProviderLineAsList.stream()
+                            .filter(pickleWrapperClass::isInstance)
+                            .findAny()
+                            .orElseThrow();
+
+                    String featureName = featureWrapper.toString()
+                            .replaceAll("^[\"]|[\"]$", "");
+                    String pickleName = pickleWrapper.toString()
+                            .replaceAll("^[\"]|[\"]$", "");
+                    if (featureName.equals(k.getKey()) && pickleName.equals(k.getValue())) {
+                        scenarioOutlinePickles.add(pickleWrapper);
+                    }
+                }
+                //todo add scenario outline detection with 1 line
+                if (scenarioOutlinePickles.size() < 2) {
+                    return List.of();
+                }
+                return scenarioOutlinePickles;
+            });
+            if (pickles.isEmpty()) {
+                return Optional.of(-1);
+            }
+            return Optional.of(pickles.indexOf(dataPickleWrapper));
+        } catch (ClassNotFoundException e) {
+            CUCUMBER.set(false);
+            return Optional.empty();
+        }
+    }
+
 
     public Optional<Integer> getCurrentDataProviderIteratorIndex() {
         Integer currentIndex = currentDataProviderIteratorIndex.get();
