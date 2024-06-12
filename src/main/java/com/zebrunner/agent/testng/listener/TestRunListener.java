@@ -95,6 +95,10 @@ public class TestRunListener extends RerunAwareListener implements ISuiteListene
         if (testMethod instanceof ConfigurationMethod) {
             ConfigurationMethod configurationMethod = (ConfigurationMethod) testMethod;
 
+            if (configurationMethod.isBeforeClassConfiguration()) {
+                adapter.registerHeadlessTestStart(tr, tm);
+            }
+
             if (configurationMethod.isBeforeMethodConfiguration()) {
                 adapter.registerHeadlessTestStart(tr, tm);
             }
