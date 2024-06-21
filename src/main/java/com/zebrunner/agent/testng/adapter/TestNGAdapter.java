@@ -133,7 +133,7 @@ public class TestNGAdapter {
     }
 
     private void setZebrunnerTestIdOnRerun(ITestResult testResult, ITestNGMethod testMethod, TestStartDescriptor testStartDescriptor) {
-        if (RunContextHolder.isRerun()) {
+        if (RunContextHolder.isRerun() && testMethod != null) {
             ITestContext context = testResult.getTestContext();
             Object[] parameters = testResult.getParameters();
 

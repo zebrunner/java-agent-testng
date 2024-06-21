@@ -97,11 +97,11 @@ public class TestRunListener extends RerunAwareListener implements ISuiteListene
 
             //unable to register test for before suite because all tests reported to the single test
 
-            if (configurationMethod.isBeforeClassConfiguration() && tm != null) {
+            if (configurationMethod.isBeforeClassConfiguration()) {
                 adapter.registerHeadlessTestStart(tr, tm);
             }
 
-            if (configurationMethod.isBeforeMethodConfiguration() && tm != null) {
+            if (configurationMethod.isBeforeMethodConfiguration()) {
                 adapter.registerHeadlessTestStart(tr, tm);
             }
             if (configurationMethod.isAfterMethodConfiguration()) {
