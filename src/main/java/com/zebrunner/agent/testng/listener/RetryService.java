@@ -12,7 +12,6 @@ import org.testng.internal.ConstructorOrMethod;
 
 import java.util.Arrays;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
@@ -91,9 +90,12 @@ public class RetryService {
     }
 
     public static boolean isRetryFinished(ITestNGMethod method, ITestContext context) {
+        if (method == null) {
+            // method is not available for BeforeClass configuration method, so we just return true here
+            return true;
+        }
         return getRetryContext(context)
                 .map(RetryContext::getRetryItemContexts)
-                .filter(d -> method != null)
                 .map(retryItemContext -> retryItemContext.get(method.getParameterInvocationCount()))
                 .map(RetryItemContext::isFinished)
                 .orElse(true);
