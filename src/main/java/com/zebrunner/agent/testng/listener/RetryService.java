@@ -90,6 +90,10 @@ public class RetryService {
     }
 
     public static boolean isRetryFinished(ITestNGMethod method, ITestContext context) {
+        if (method == null) {
+            // method is not available for BeforeClass configuration method, so we just return true here
+            return true;
+        }
         return getRetryContext(context)
                 .map(RetryContext::getRetryItemContexts)
                 .map(retryItemContext -> retryItemContext.get(method.getParameterInvocationCount()))
