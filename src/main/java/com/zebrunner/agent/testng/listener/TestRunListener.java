@@ -1,5 +1,6 @@
 package com.zebrunner.agent.testng.listener;
 
+import com.zebrunner.agent.core.registrar.LogsBuffer;
 import com.zebrunner.agent.testng.adapter.TestNGAdapter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -124,6 +125,10 @@ public class TestRunListener extends RerunAwareListener implements ISuiteListene
         if (testMethod instanceof ConfigurationMethod) {
             ConfigurationMethod configurationMethod = (ConfigurationMethod) testMethod;
 
+            if(configurationMethod.isAfterClassConfiguration() ||
+                    configurationMethod.isAfterTestConfiguration()) {
+                LogsBuffer.clearPreTestQueue();
+            }
             if (configurationMethod.isAfterMethodConfiguration()) {
                 adapter.registerAfterTestFinish();
             }
