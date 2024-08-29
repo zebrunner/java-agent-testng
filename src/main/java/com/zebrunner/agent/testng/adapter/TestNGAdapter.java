@@ -294,6 +294,10 @@ public class TestNGAdapter {
         registrar.registerAfterTestFinish();
     }
 
+    public void clearConfigurationLogs() {
+        registrar.clearConfigurationLogs();
+    }
+
     private TestInvocationContext buildTestInvocationContext(ITestNGMethod testMethod, int dataProviderIndex, Object[] parameters, int invocationIndex) {
         String displayName = null;
         Test testAnnotation = testMethod.getConstructorOrMethod()
