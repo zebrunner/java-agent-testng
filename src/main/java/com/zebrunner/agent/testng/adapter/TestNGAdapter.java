@@ -133,8 +133,7 @@ public class TestNGAdapter {
     }
 
     private void setZebrunnerTestIdOnRerun(ITestResult testResult, ITestNGMethod testMethod, TestStartDescriptor testStartDescriptor) {
-        // testMethod is not available for BeforeClass configuration method, so we just skip this logic in such case
-        if (RunContextHolder.isRerun() && testMethod != null) {
+        if (RunContextHolder.isRerun()) {
             ITestContext context = testResult.getTestContext();
             Object[] parameters = testResult.getParameters();
 
@@ -293,6 +292,10 @@ public class TestNGAdapter {
 
     public void registerAfterTestFinish() {
         registrar.registerAfterTestFinish();
+    }
+
+    public void clearConfigurationLogs() {
+        registrar.clearConfigurationLogs();
     }
 
     private TestInvocationContext buildTestInvocationContext(ITestNGMethod testMethod, int dataProviderIndex, Object[] parameters, int invocationIndex) {
