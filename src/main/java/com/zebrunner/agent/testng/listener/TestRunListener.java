@@ -95,12 +95,6 @@ public class TestRunListener extends RerunAwareListener implements ISuiteListene
         if (testMethod instanceof ConfigurationMethod) {
             ConfigurationMethod configurationMethod = (ConfigurationMethod) testMethod;
 
-            //unable to register test for before suite because all tests reported to the single test
-
-            if (configurationMethod.isBeforeClassConfiguration()) {
-                adapter.registerHeadlessTestStart(tr, tm);
-            }
-
             if (configurationMethod.isBeforeMethodConfiguration()) {
                 adapter.registerHeadlessTestStart(tr, tm);
             }
@@ -130,6 +124,10 @@ public class TestRunListener extends RerunAwareListener implements ISuiteListene
         if (testMethod instanceof ConfigurationMethod) {
             ConfigurationMethod configurationMethod = (ConfigurationMethod) testMethod;
 
+            if(configurationMethod.isAfterClassConfiguration() ||
+                    configurationMethod.isAfterTestConfiguration()) {
+                adapter.clearConfigurationLogs();
+            }
             if (configurationMethod.isAfterMethodConfiguration()) {
                 adapter.registerAfterTestFinish();
             }
