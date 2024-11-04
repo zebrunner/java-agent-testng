@@ -15,6 +15,8 @@ import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 import com.zebrunner.agent.core.config.ConfigurationHolder;
@@ -36,7 +38,6 @@ import com.zebrunner.agent.testng.core.maintainer.RootXmlSuiteMaintainerResolver
 import com.zebrunner.agent.testng.core.testname.TestNameResolverRegistry;
 import com.zebrunner.agent.testng.listener.RetryService;
 import com.zebrunner.agent.testng.listener.RunContextService;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Adapter used to convert TestNG test domain to Zebrunner Agent domain
@@ -183,17 +184,17 @@ public class TestNGAdapter {
                 Class<?> pickleWrapperClass = Class.forName("io.cucumber.testng.PickleWrapper");
                 Class<?> featureWrapperClass = Class.forName("io.cucumber.testng.FeatureWrapper");
                 String featureName = Arrays.stream(parameters)
-                        .filter(featureWrapperClass::isInstance)
-                        .map(feature -> feature.toString()
-                                .replaceAll("^[\"]|[\"]$", ""))
-                        .findAny()
-                        .orElseThrow(ClassNotFoundException::new);
+                                           .filter(featureWrapperClass::isInstance)
+                                           .map(Object::toString)
+                                           .map(feature -> feature.replaceAll("^\"|\"$", ""))
+                                           .findAny()
+                                           .orElseThrow(ClassNotFoundException::new);
                 String pickleName = Arrays.stream(parameters)
-                        .filter(pickleWrapperClass::isInstance)
-                        .map(pickle -> pickle.toString()
-                                .replaceAll("^[\"]|[\"]$", ""))
-                        .findAny()
-                        .orElseThrow(ClassNotFoundException::new);
+                                          .filter(pickleWrapperClass::isInstance)
+                                          .map(Object::toString)
+                                          .map(pickle -> pickle.replaceAll("^\"|\"$", ""))
+                                          .findAny()
+                                          .orElseThrow(ClassNotFoundException::new);
                 realClassName = featureName;
                 methodName = pickleName;
             } catch (ClassNotFoundException e) {
@@ -308,7 +309,7 @@ public class TestNGAdapter {
         }
 
         List<String> stringParameters = Arrays.stream(parameters)
-                                              .map(Object::toString)
+                                              .map(Objects::toString)
                                               .collect(Collectors.toList());
         List<String> parameterClassNames = Arrays.stream(testMethod.getConstructorOrMethod().getParameterTypes())
                                                  .map(Class::getName)
