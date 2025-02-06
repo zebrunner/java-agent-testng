@@ -19,6 +19,7 @@ import java.util.stream.Collectors;
 
 import com.zebrunner.agent.core.config.ConfigurationHolder;
 import com.zebrunner.agent.core.config.provider.SystemPropertiesConfigurationProvider;
+import com.zebrunner.agent.core.exception.BlockedTestException;
 import com.zebrunner.agent.core.registrar.RunContextHolder;
 import com.zebrunner.agent.core.registrar.TestRunRegistrar;
 import com.zebrunner.agent.core.registrar.descriptor.Status;
@@ -243,7 +244,11 @@ public class TestNGAdapter {
             OffsetDateTime endedAt = ofMillis(endedAtMillis);
             String errorMessage = ExceptionUtils.getStacktrace(testResult.getThrowable());
 
-            TestFinishDescriptor result = new TestFinishDescriptor(Status.FAILED, endedAt, errorMessage);
+            Status status = testResult.getThrowable() instanceof BlockedTestException
+                    ? Status.BLOCKED
+                    : Status.FAILED;
+
+            TestFinishDescriptor result = new TestFinishDescriptor(status, endedAt, errorMessage);
             registrar.registerTestFinish(id, result);
         } else {
             log.debug("TestNGAdapter -> registerFailedTestFinish: retry is NOT finished");
