@@ -11,8 +11,6 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.lang.reflect.Method;
 import java.time.Instant;
-import java.time.OffsetDateTime;
-import java.time.ZoneId;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -22,13 +20,12 @@ import java.util.stream.Collectors;
 import com.zebrunner.agent.core.config.ConfigurationHolder;
 import com.zebrunner.agent.core.config.provider.SystemPropertiesConfigurationProvider;
 import com.zebrunner.agent.core.exception.BlockedTestException;
-import com.zebrunner.agent.core.registrar.RunContextHolder;
 import com.zebrunner.agent.core.registrar.TestRunRegistrar;
-import com.zebrunner.agent.core.registrar.descriptor.Status;
-import com.zebrunner.agent.core.registrar.descriptor.TestFinishDescriptor;
-import com.zebrunner.agent.core.registrar.descriptor.TestRunFinishDescriptor;
-import com.zebrunner.agent.core.registrar.descriptor.TestRunStartDescriptor;
-import com.zebrunner.agent.core.registrar.descriptor.TestStartDescriptor;
+import com.zebrunner.agent.core.registrar.domain.Status;
+import com.zebrunner.agent.core.registrar.domain.TestFinish;
+import com.zebrunner.agent.core.registrar.domain.TestRunFinish;
+import com.zebrunner.agent.core.registrar.domain.TestRunStart;
+import com.zebrunner.agent.core.registrar.domain.TestStart;
 import com.zebrunner.agent.core.registrar.maintainer.ChainedMaintainerResolver;
 import com.zebrunner.agent.testng.core.ExceptionUtils;
 import com.zebrunner.agent.testng.core.FactoryInstanceHolder;
@@ -75,14 +72,14 @@ public class TestNGAdapter {
                     SystemPropertiesConfigurationProvider.class
             );
 
-            registrar.registerStart(new TestRunStartDescriptor(name, "testng", OffsetDateTime.now(), name));
+            registrar.registerStart(new TestRunStart(name, "testng", Instant.now(), name));
             RootXmlSuiteLabelAssigner.getInstance().assignTestRunLabels(rootXmlSuite);
         }
     }
 
     public void registerRunFinish(ISuite suite) {
         if (suite.getXmlSuite().getParentSuite() == null) {
-            registrar.registerFinish(new TestRunFinishDescriptor(OffsetDateTime.now()));
+            registrar.registerFinish(new TestRunFinish(Instant.now()));
         }
     }
 
@@ -92,12 +89,12 @@ public class TestNGAdapter {
 
             TestInvocationContext testContext = this.buildTestStartInvocationContext(testResult);
             String correlationData = testContext.asJsonString();
-            TestStartDescriptor testStartDescriptor = buildTestStartDescriptor(correlationData, testResult);
+            TestStart testStart = this.buildTestStart(correlationData, testResult);
 
-            setZebrunnerTestIdOnRerun(testResult, testResult.getMethod(), testStartDescriptor);
+            this.setZebrunnerTestIdOnRerun(testResult, testResult.getMethod(), testStart);
 
-            String id = generateTestId(testContext);
-            registrar.registerTestStart(id, testStartDescriptor);
+            String id = this.generateTestId(testContext);
+            registrar.registerTestStart(id, testStart);
         } else {
             log.debug("TestNGAdapter -> registerTestStart: retry is NOT finished");
         }
@@ -109,12 +106,12 @@ public class TestNGAdapter {
                 log.debug("TestNGAdapter -> registerHeadlessTestStart: retry is finished");
 
                 TestInvocationContext testContext = this.buildTestStartInvocationContext(testResult);
-                TestStartDescriptor testStartDescriptor = buildTestStartDescriptor(null, testResult);
+                TestStart testStart = this.buildTestStart(null, testResult);
 
-                setZebrunnerTestIdOnRerun(testResult, nextTestMethod, testStartDescriptor);
+                this.setZebrunnerTestIdOnRerun(testResult, nextTestMethod, testStart);
 
                 String id = generateTestId(testContext);
-                registrar.registerHeadlessTestStart(id, testStartDescriptor);
+                registrar.registerHeadlessTestStart(id, testStart);
             } else {
                 log.debug("TestNGAdapter -> registerHeadlessTestStart: retry is NOT finished");
             }
@@ -134,8 +131,8 @@ public class TestNGAdapter {
         return buildTestInvocationContext(testMethod, dataProviderIndex, parameters, invocationIndex);
     }
 
-    private void setZebrunnerTestIdOnRerun(ITestResult testResult, ITestNGMethod testMethod, TestStartDescriptor testStartDescriptor) {
-        if (RunContextHolder.isRerun()) {
+    private void setZebrunnerTestIdOnRerun(ITestResult testResult, ITestNGMethod testMethod, TestStart testStart) {
+        if (com.zebrunner.agent.core.registrar.RunContextService.isRerun()) {
             ITestContext context = testResult.getTestContext();
             Object[] parameters = testResult.getParameters();
 
@@ -159,17 +156,17 @@ public class TestNGAdapter {
             }
 
             RunContextService.getZebrunnerTestIdOnRerun(testMethod, dataProviderIndex)
-                             .ifPresent(testStartDescriptor::setZebrunnerId);
+                             .ifPresent(testStart::setId);
         }
     }
 
-    private TestStartDescriptor buildTestStartDescriptor(String correlationData, ITestResult testResult) {
+    private TestStart buildTestStart(String correlationData, ITestResult testResult) {
         ITestNGMethod testMethod = testResult.getMethod();
         ITestContext context = testResult.getTestContext();
         Object[] parameters = testResult.getParameters();
 
         String displayName = TestNameResolverRegistry.get().resolve(testResult);
-        OffsetDateTime startedAt = ofMillis(testResult.getStartMillis());
+        Instant startedAt = Instant.ofEpochMilli(testResult.getStartMillis());
         Class<?> realClass = testResult.getTestClass().getRealClass();
         String realClassName = null;
         Method method = testMethod.getConstructorOrMethod().getMethod();
@@ -203,28 +200,28 @@ public class TestNGAdapter {
             }
         }
 
-        return TestStartDescriptor.builder()
-                                  .correlationData(correlationData)
-                                  .name(displayName)
-                                  .startedAt(startedAt)
-                                  .testClass(realClass)
-                                  .testClassName(realClassName)
-                                  .testMethod(method)
-                                  .testMethodName(methodName)
-                                  .argumentsIndex(dataProviderIndex)
-                                  .testGroups(Arrays.asList(testMethod.getGroups()))
-                                  .build();
+        return TestStart.builder()
+                        .correlationData(correlationData)
+                        .name(displayName)
+                        .startedAt(startedAt)
+                        .testClass(realClass)
+                        .testClassName(realClassName)
+                        .testMethod(method)
+                        .testMethodName(methodName)
+                        .argumentsIndex(dataProviderIndex)
+                        .testGroups(Arrays.asList(testMethod.getGroups()))
+                        .build();
     }
 
     public void registerTestFinish(ITestResult testResult) {
         long endedAtMillis = testResult.getEndMillis();
-        OffsetDateTime endedAt = ofMillis(endedAtMillis);
+        Instant endedAt = Instant.ofEpochMilli(endedAtMillis);
 
-        TestFinishDescriptor testFinishDescriptor = new TestFinishDescriptor(Status.PASSED, endedAt);
+        TestFinish testFinish = new TestFinish(Status.PASSED, endedAt);
 
         TestInvocationContext testContext = buildTestFinishInvocationContext(testResult);
         String id = generateTestId(testContext);
-        registrar.registerTestFinish(id, testFinishDescriptor);
+        registrar.registerTestFinish(id, testFinish);
 
         // forcibly disable retry otherwise passed can't be registered in reporting tool!
         RetryService.setRetryFinished(testResult.getMethod(), testResult.getTestContext());
@@ -242,14 +239,13 @@ public class TestNGAdapter {
             }
 
             long endedAtMillis = testResult.getEndMillis();
-            OffsetDateTime endedAt = ofMillis(endedAtMillis);
+            Instant endedAt = Instant.ofEpochMilli(endedAtMillis);
             String errorMessage = ExceptionUtils.getStacktrace(testResult.getThrowable());
 
             Status status = testResult.getThrowable() instanceof BlockedTestException
                     ? Status.BLOCKED
                     : Status.FAILED;
-
-            TestFinishDescriptor result = new TestFinishDescriptor(status, endedAt, errorMessage);
+            TestFinish result = new TestFinish(status, endedAt, errorMessage);
             registrar.registerTestFinish(id, result);
         } else {
             log.debug("TestNGAdapter -> registerFailedTestFinish: retry is NOT finished");
@@ -263,10 +259,10 @@ public class TestNGAdapter {
             TestInvocationContext testContext = buildTestFinishInvocationContext(testResult);
             String id = generateTestId(testContext);
 
-            OffsetDateTime endedAt = ofMillis(testResult.getEndMillis());
+            Instant endedAt = Instant.ofEpochMilli(testResult.getEndMillis());
             String errorMessage = ExceptionUtils.getStacktrace(testResult.getThrowable());
 
-            TestFinishDescriptor result = new TestFinishDescriptor(Status.SKIPPED, endedAt, errorMessage);
+            TestFinish result = new TestFinish(Status.SKIPPED, endedAt, errorMessage);
             registrar.registerTestFinish(id, result);
         } else {
             log.debug("TestNGAdapter -> registerSkippedTestFinish: retry is NOT finished");
@@ -339,10 +335,6 @@ public class TestNGAdapter {
 
     private String generateTestId(TestInvocationContext testInvocationContext) {
         return testInvocationContext.toString();
-    }
-
-    private OffsetDateTime ofMillis(long epochMillis) {
-        return OffsetDateTime.ofInstant(Instant.ofEpochMilli(epochMillis), ZoneId.systemDefault());
     }
 
 }
