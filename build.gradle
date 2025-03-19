@@ -1,11 +1,11 @@
 plugins {
-    id "java-library"
+    id 'java-library'
 }
 
 group = 'com.zebrunner'
-version = "${version != 'unspecified' ? version : '1.7.0'}"
+version = "${version != 'unspecified' ? version : 'local'}"
 
-ext.coreVersion = project.properties['core.version'] ?: '1.7.3'
+ext.coreVersion = project.properties['core.version'] ?: 'local'
 
 sourceCompatibility = '11'
 targetCompatibility = '11'
@@ -23,23 +23,23 @@ sourceSets {
 repositories {
     mavenCentral()
     maven {
-        url "https://public-nexus.zebrunner.com/repository/ce-snapshots/"
+        url 'https://public-nexus.zebrunner.com/repository/ce-snapshots/'
     }
 }
 
 dependencies {
-    api("com.zebrunner:agent-core:${coreVersion}")
-    implementation('org.testng:testng:7.7.1')
-    implementation('com.google.code.gson:gson:2.9.0')
-    implementation('com.konghq:unirest-java:3.13.10')
+    api "com.zebrunner:agent-core:${coreVersion}"
+    implementation 'org.testng:testng:7.8.0'
+    implementation 'com.google.code.gson:gson:2.12.1'
+    implementation 'com.konghq:unirest-java:3.14.5'
 
-    implementation('org.slf4j:slf4j-api:1.7.36')
-    annotationProcessor('org.projectlombok:lombok:1.18.24')
-    compileOnly("org.projectlombok:lombok:1.18.24")
+    implementation 'org.slf4j:slf4j-api:1.7.36'
+    annotationProcessor 'org.projectlombok:lombok:1.18.24'
+    compileOnly 'org.projectlombok:lombok:1.18.24'
 
-    testImplementation("org.mockito:mockito-core:4.6.1")
-    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.8.2")
-    testImplementation("org.junit.jupiter:junit-jupiter-params:5.8.2")
+    testImplementation 'org.mockito:mockito-core:4.6.1'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.2'
+    testImplementation 'org.junit.jupiter:junit-jupiter-params:5.8.2'
 }
 
 apply from: 'publish-maven.gradle'
