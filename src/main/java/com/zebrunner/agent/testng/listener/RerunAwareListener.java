@@ -1,13 +1,5 @@
 package com.zebrunner.agent.testng.listener;
 
-import com.zebrunner.agent.core.listener.RerunListener;
-import com.zebrunner.agent.core.registrar.RerunService;
-import com.zebrunner.agent.core.registrar.RunContextHolder;
-import com.zebrunner.agent.core.registrar.domain.TestDTO;
-import com.zebrunner.agent.testng.core.FactoryInstanceHolder;
-import com.zebrunner.agent.testng.core.TestInvocationContext;
-import com.zebrunner.agent.testng.core.method.DependantMethodResolver;
-import com.zebrunner.agent.testng.core.retry.RetryAnalyzerInterceptor;
 import org.testng.IMethodInstance;
 import org.testng.IMethodInterceptor;
 import org.testng.IRetryAnalyzer;
@@ -21,27 +13,34 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import com.zebrunner.agent.core.registrar.RerunListener;
+import com.zebrunner.agent.core.registrar.domain.RunContextTestSummary;
+import com.zebrunner.agent.testng.core.FactoryInstanceHolder;
+import com.zebrunner.agent.testng.core.TestInvocationContext;
+import com.zebrunner.agent.testng.core.method.DependantMethodResolver;
+import com.zebrunner.agent.testng.core.retry.RetryAnalyzerInterceptor;
+
 public class RerunAwareListener implements RerunListener, IMethodInterceptor {
 
     @Override
-    public void onRerun(List<TestDTO> tests) {
-        Map<TestInvocationContext, Long> invocationContexts = getInvocationContexts(tests);
+    public void onRerun(List<RunContextTestSummary> tests) {
+        Map<TestInvocationContext, Long> invocationContexts = this.getInvocationContexts(tests);
         RunContextService.addInvocationContexts(invocationContexts);
     }
 
     /**
      * Processes test correlation data in order to restore original test execution context for appropriate test
      *
-     * @param testDTOs tests
+     * @param tests tests
      * @return collection of test execution contexts
      */
-    private Map<TestInvocationContext, Long> getInvocationContexts(List<TestDTO> testDTOs) {
-        return testDTOs.stream()
-                       .collect(Collectors.toMap(
-                               test -> TestInvocationContext.fromJsonString(test.getCorrelationData()),
-                               TestDTO::getId,
-                               (testId1, testId2) -> testId1
-                       ));
+    private Map<TestInvocationContext, Long> getInvocationContexts(List<RunContextTestSummary> tests) {
+        return tests.stream()
+                    .collect(Collectors.toMap(
+                            test -> TestInvocationContext.fromJsonString(test.getCorrelationData()),
+                            RunContextTestSummary::getId,
+                            (testId1, testId2) -> testId1
+                    ));
     }
 
     /**
@@ -62,14 +61,14 @@ public class RerunAwareListener implements RerunListener, IMethodInterceptor {
         FactoryInstanceHolder.registerInstances(runner.getTestClasses());
         methods.forEach(methodInstance -> this.addRetryInterceptor(methodInstance.getMethod(), context));
 
-        if (!RunContextHolder.isRerun()) {
+        if (!com.zebrunner.agent.core.registrar.RunContextService.isRerun()) {
             return methods;
         }
 
         Set<IMethodInstance> actualMethodsForRerun = this.getMethodsForRerun(methods);
         if (RunContextService.countInvocationContexts() < actualMethodsForRerun.size()) {
-            List<TestDTO> tests = RerunService.retrieveFullExecutionContextTests();
-            Map<TestInvocationContext, Long> invocationContexts = getInvocationContexts(tests);
+            List<RunContextTestSummary> tests = com.zebrunner.agent.core.registrar.RunContextService.retrieveFullExecutionPlanTests();
+            Map<TestInvocationContext, Long> invocationContexts = this.getInvocationContexts(tests);
 
             for (IMethodInstance methodInstance : actualMethodsForRerun) {
                 invocationContexts.entrySet()
