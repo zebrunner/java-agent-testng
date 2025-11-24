@@ -1,9 +1,11 @@
 package com.zebrunner.agent.testng.core.config;
 
+import org.testng.xml.XmlSuite;
+
+import lombok.RequiredArgsConstructor;
+
 import com.zebrunner.agent.core.config.ConfigurationProvider;
 import com.zebrunner.agent.core.config.ReportingConfiguration;
-import lombok.RequiredArgsConstructor;
-import org.testng.xml.XmlSuite;
 
 import static com.zebrunner.agent.core.config.ConfigurationUtils.parseLong;
 
@@ -22,25 +24,20 @@ public class RootXmlSuiteConfigurationProvider implements ConfigurationProvider 
 
     @Override
     public ReportingConfiguration getConfiguration() {
-        return ReportingConfiguration.builder()
-                                     .projectKey(rootXmlSuite.getParameter(PROJECT_KEY_PARAMETER))
-                                     .run(new ReportingConfiguration.RunConfiguration(
-                                             rootXmlSuite.getParameter(RUN_DISPLAY_NAME_PARAMETER),
-                                             null, null, null, null, null, null
-                                     ))
-                                     .notification(new ReportingConfiguration.NotificationConfiguration(
-                                             null,
-                                             null,
-                                             rootXmlSuite.getParameter(NOTIFICATION_SLACK_CHANNELS_PARAMETER),
-                                             rootXmlSuite.getParameter(NOTIFICATION_MS_TEAMS_PARAMETER),
-                                             rootXmlSuite.getParameter(NOTIFICATION_EMAILS_PARAMETER)
-                                     ))
-                                     .milestone(new ReportingConfiguration.MilestoneConfiguration(
-                                             parseLong(rootXmlSuite.getParameter(MILESTONE_ID_PARAMETER)),
-                                             rootXmlSuite.getParameter(MILESTONE_NAME_PARAMETER)
-                                     ))
-                                     .tcm(new ReportingConfiguration.TcmConfiguration())
-                                     .build();
+        return new ReportingConfiguration()
+                .setProjectKey(rootXmlSuite.getParameter(PROJECT_KEY_PARAMETER))
+                .setRun(new ReportingConfiguration.RunConfiguration()
+                        .setDisplayName(rootXmlSuite.getParameter(RUN_DISPLAY_NAME_PARAMETER))
+                )
+                .setNotification(new ReportingConfiguration.NotificationConfiguration()
+                        .setSlackChannels(rootXmlSuite.getParameter(NOTIFICATION_SLACK_CHANNELS_PARAMETER))
+                        .setMsTeamsChannels(rootXmlSuite.getParameter(NOTIFICATION_MS_TEAMS_PARAMETER))
+                        .setEmails(rootXmlSuite.getParameter(NOTIFICATION_EMAILS_PARAMETER))
+                )
+                .setMilestone(new ReportingConfiguration.MilestoneConfiguration()
+                        .setId(parseLong(rootXmlSuite.getParameter(MILESTONE_ID_PARAMETER)))
+                        .setName(rootXmlSuite.getParameter(MILESTONE_NAME_PARAMETER))
+                );
     }
 
 }
