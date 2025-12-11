@@ -26,17 +26,20 @@ public class RootXmlSuiteConfigurationProvider implements ConfigurationProvider 
     public ReportingConfiguration getConfiguration() {
         return new ReportingConfiguration()
                 .setProjectKey(rootXmlSuite.getParameter(PROJECT_KEY_PARAMETER))
-                .setRun(new ReportingConfiguration.RunConfiguration()
-                        .setDisplayName(rootXmlSuite.getParameter(RUN_DISPLAY_NAME_PARAMETER))
+                .setRun(
+                        new ReportingConfiguration.RunConfiguration()
+                                .setDisplayName(rootXmlSuite.getParameter(RUN_DISPLAY_NAME_PARAMETER))
                 )
-                .setNotification(new ReportingConfiguration.NotificationConfiguration()
-                        .setSlackChannels(rootXmlSuite.getParameter(NOTIFICATION_SLACK_CHANNELS_PARAMETER))
-                        .setMsTeamsChannels(rootXmlSuite.getParameter(NOTIFICATION_MS_TEAMS_PARAMETER))
-                        .setEmails(rootXmlSuite.getParameter(NOTIFICATION_EMAILS_PARAMETER))
+                .setNotification(
+                        new ReportingConfiguration.Notification()
+                                .setSlackChannels(rootXmlSuite.getParameter(NOTIFICATION_SLACK_CHANNELS_PARAMETER))
+                                .setMsTeamsChannels(rootXmlSuite.getParameter(NOTIFICATION_MS_TEAMS_PARAMETER))
+                                .setEmails(rootXmlSuite.getParameter(NOTIFICATION_EMAILS_PARAMETER))
                 )
-                .setMilestone(new ReportingConfiguration.MilestoneConfiguration()
-                        .setId(parseLong(rootXmlSuite.getParameter(MILESTONE_ID_PARAMETER)))
-                        .setName(rootXmlSuite.getParameter(MILESTONE_NAME_PARAMETER))
+                .setMilestone(
+                        new ReportingConfiguration.Milestone()
+                                .setId(parseLong(rootXmlSuite.getParameter(MILESTONE_ID_PARAMETER)))
+                                .setName(rootXmlSuite.getParameter(MILESTONE_NAME_PARAMETER))
                 );
     }
 
