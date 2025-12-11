@@ -1,14 +1,14 @@
 plugins {
     id 'java-library'
+    id 'maven-publish'
+    id 'signing'
+    id 'io.github.sgtsilvio.gradle.maven-central-publishing' version '0.4.1'
 }
 
 group = 'com.zebrunner'
 version = "${version != 'unspecified' ? version : 'local'}"
 
 ext.coreVersion = project.properties['core.version'] ?: 'local'
-
-sourceCompatibility = '11'
-targetCompatibility = '11'
 
 sourceSets {
     main {
@@ -27,6 +27,16 @@ repositories {
     }
 }
 
+java {
+    withSourcesJar()
+    withJavadocJar()
+
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(11)
+    }
+}
+
+
 dependencies {
     api "com.zebrunner:agent-core:${coreVersion}"
     implementation 'org.testng:testng:7.8.0'
@@ -43,7 +53,3 @@ dependencies {
 }
 
 apply from: 'publish-maven.gradle'
-
-test {
-    useJUnitPlatform()
-}

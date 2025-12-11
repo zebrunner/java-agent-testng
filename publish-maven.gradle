@@ -1,23 +1,25 @@
-apply plugin: 'maven-publish'
-apply plugin: 'signing'
-
-task sourcesJar(type: Jar, dependsOn: classes) {
-    archiveClassifier.set('sources')
-    from sourceSets.main.allSource
+tasks.register("publishSnapshotToNexus") {
+    doFirst {
+        if (!version.toString().endsWith("-SNAPSHOT")) {
+            throw new GradleException("Version must end with -SNAPSHOT to publish snapshots.")
+        }
+    }
+    dependsOn("publishMavenJavaPublicationToNexusRepository")
 }
 
-task javadocJar(type: Jar, dependsOn: javadoc) {
-    archiveClassifier.set('javadoc')
-    from javadoc.destinationDir
+tasks.register("publishReleaseToCentral") {
+    doFirst {
+        if (version.toString().endsWith("-SNAPSHOT")) {
+            throw new GradleException("Remove -SNAPSHOT for Central Portal releases.")
+        }
+    }
+    dependsOn("publishMavenJavaPublicationToMavenCentral")
 }
 
 publishing {
     publications {
         mavenJava(MavenPublication) {
             from components.java
-
-            artifact tasks.sourcesJar
-            artifact tasks.javadocJar
 
             pom {
                 name = 'Zebrunner TestNG agent'
@@ -27,29 +29,33 @@ publishing {
                     name = 'Zebrunner'
                     url = 'https://zebrunner.com'
                 }
+
                 licenses {
                     license {
                         name = 'The Apache License, Version 2.0'
                         url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
                     }
                 }
+
                 developers {
                     developer {
-                        id = 'nsidorevich'
-                        name = 'Nikita Sidorevich'
-                        email = 'nsidorevich@zebrunner.com'
+                        id = 'sbrenko'
+                        name = 'Sergey Brenko'
+                        email = 'sbrenko@zebrunner.com'
                     }
                     developer {
-                        id = 'brutskov'
-                        name = 'Bogdan Rutskov'
-                        email = 'brutskov@zebrunner.com'
+                        id = 'dkazak'
+                        name = 'Dmitry Kazak'
+                        email = 'dkazak@solvd.com'
                     }
                 }
+
                 scm {
                     connection = 'https://github.com/zebrunner/java-agent-testng.git'
                     developerConnection = 'git@github.com:zebrunner/java-agent-testng.git'
                     url = 'https://github.com/zebrunner/java-agent-testng'
                 }
+
                 issueManagement {
                     system = 'GitHub'
                     url = 'https://github.com/zebrunner/java-agent-testng/issues'
@@ -59,19 +65,19 @@ publishing {
     }
     repositories {
         maven {
-            name = 'MavenCentral'
-            url = project.findProperty('publishing.maven.repo.url') ?: System.getenv('PUBLISHING_MAVEN_REPO_URL')
+            name = 'nexus'
+            url = project.findProperty('nexusUrl')
             credentials {
-                username = project.findProperty('publishing.maven.username') ?: System.getenv('PUBLISHING_MAVEN_USER')
-                password = project.findProperty('publishing.maven.password') ?: System.getenv('PUBLISHING_MAVEN_PASSWORD')
+                username = project.findProperty('nexusUsername')
+                password = project.findProperty('nexusPassword')
             }
         }
     }
 }
 
 signing {
-    def signingKey = project.findProperty('signing.key') ?: System.getenv('SIGNING_KEY')
-    def signingPassword = project.findProperty('signing.password') ?: System.getenv('SIGNING_PASSWORD')
+    def signingKey = project.findProperty('signing.key') as String ?: System.getenv('SIGNING_KEY')
+    def signingPassword = project.findProperty('signing.password') as String ?: System.getenv('SIGNING_PASSWORD')
     useInMemoryPgpKeys(signingKey, signingPassword)
     sign publishing.publications.mavenJava
 }
